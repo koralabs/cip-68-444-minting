@@ -1,0 +1,12 @@
+{
+    "name": "cip-68-444-minting",
+    "version": "1.0.0",
+    "description": "",
+    "type": "module",
+    "scripts": {},
+    "author": "et",
+    "license": "unlicense",
+    "dependencies": {
+        "@hyperionbt/helios": "0.15.0"
+    }
+}
