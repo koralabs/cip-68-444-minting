@@ -1,37 +1,54 @@
-minting cip_68_444_editing
+spending cip_68_444_editing
 
 enum Redeemer {
     UPDATE_REFERENCE_TOKEN {}
     MIGRATE_REFERENCE_TOKEN {}
 }
 
+struct Utxo {
+    hash:ByteArray
+    index:Int
+}
+
 struct MintAsset {
-    asset_name: String,
-    utxo: String,
+    name: ByteArray
+    utxo: Utxo
     price: Int
 }
 
 struct MintSettings {
-    payment_address: ByteArray,
-    reference_token_address: ByteArray,
-    valid_contracts: []ByteArray,
+    payment_address: ByteArray
+    valid_contracts: []ByteArray
     assets: []MintAsset
 }
 
-enum Datum {
-    CIP68 {
-        nft: Map[String]Data
-        version: Int
-        extra: Map[String]Data
-    }
+struct MintCost {
+    payment: Int
+    fee: Int
 }
 
-const SETTINGS_HANDLE: string
+// enum Datum {
+//     CIP68 {
+//         nft: Map[String]Data
+//         version: Int
+//         extra: Map[String]Data
+//     }
+// }
+
+const SETTINGS_HANDLE_NAME: string
 const HANDLE_POLICY: MintingPolicyHash = MintingPolicyHash::new(#f0ff48bbb7bbe9d59a40f1ce90e9e9d0ff5002ec48f232b49ca0fb9a)
 const LBL_444: ByteArray = #001bc280 // (444)
 const LBL_222: ByteArray = #000de140 // (222)
 const LBL_100: ByteArray = #000643b0 // (100)
-const PZ_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + (SETTINGS_HANDLE.encode_utf8()))
+const SETTINGS_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + (SETTINGS_HANDLE_NAME.encode_utf8()))
+
+func isValidContract(hash: ValidatorHash, settings: MintSettings) -> Bool {
+    assert(settings.valid_contracts.any((cred: ByteArray) -> Bool {
+        Credential::new_validator(hash) == Credential::new_validator(ValidatorHash::new(cred))
+    }), "Contract not found in valid contracts list");
+    
+    true
+}
 
 func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
     redeemer.switch {

@@ -7,6 +7,6 @@
     "author": "et",
     "license": "unlicense",
     "dependencies": {
-        "@hyperionbt/helios": "0.15.0"
+        "@hyperionbt/helios": "0.15.10"
     }
 }
