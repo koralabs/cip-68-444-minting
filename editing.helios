@@ -1,8 +1,9 @@
 spending cip_68_444_editing
 
 enum Redeemer {
-    UPDATE_REFERENCE_TOKEN {}
-    MIGRATE_REFERENCE_TOKEN {}
+    UPDATE_REFERENCE_TOKEN {
+        asset: ByteArray
+    }
 }
 
 struct Utxo {
@@ -27,14 +28,6 @@ struct MintCost {
     fee: Int
 }
 
-// enum Datum {
-//     CIP68 {
-//         nft: Map[String]Data
-//         version: Int
-//         extra: Map[String]Data
-//     }
-// }
-
 const SETTINGS_HANDLE_NAME: string
 const HANDLE_POLICY: MintingPolicyHash = MintingPolicyHash::new(#f0ff48bbb7bbe9d59a40f1ce90e9e9d0ff5002ec48f232b49ca0fb9a)
 const LBL_444: ByteArray = #001bc280 // (444)
@@ -42,7 +35,17 @@ const LBL_222: ByteArray = #000de140 // (222)
 const LBL_100: ByteArray = #000643b0 // (100)
 const SETTINGS_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + (SETTINGS_HANDLE_NAME.encode_utf8()))
 
-func isValidContract(hash: ValidatorHash, settings: MintSettings) -> Bool {
+func load_settings(ctx: ScriptContext) -> PzSettings {
+    settings_input: Option[TxInput] = ctx.tx.ref_inputs.find_safe((input: TxInput) -> Bool { 
+        input.output.value.get_safe(SETTINGS_HANDLE) == 1
+    });
+    assert(settings_input != Option[TxInput]::None, "settings_input reference input missing");
+    settings = MintSettings::from_data(settings_input.unwrap().output.datum.get_inline_data());
+
+    settings
+}
+
+func is_valid_contract(hash: ValidatorHash, settings: MintSettings) -> Bool {
     assert(settings.valid_contracts.any((cred: ByteArray) -> Bool {
         Credential::new_validator(hash) == Credential::new_validator(ValidatorHash::new(cred))
     }), "Contract not found in valid contracts list");
@@ -51,15 +54,29 @@ func isValidContract(hash: ValidatorHash, settings: MintSettings) -> Bool {
 }
 
 func main(datum: Datum, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
+    settings: MintSettings = load_settings(ctx);
     redeemer.switch {
-        UPDATE_REFERENCE_TOKEN => {
-            // Only if signed by SETTINGS_HANDLE owner
-            // Validate settings
-            true
-        },
-        MIGRATE_REFERENCE_TOKEN => {
-            // Only to `valid_contracts`
+        r: UPDATE_REFERENCE_TOKEN => {
+            token_output_opt: Option[TxOutput] = ctx.tx.outputs.find_safe((output: TxOutput) -> {
+                output.value.contains(Value::new(AssetClass::new(ctx.get_current_minting_policy_hash(), r.asset), 1))
+            });
+            
+            assert(token_output_opt != Option[TxOutput]::None, "Reference token output missing");
+            token_output: TxOutput = token_output_opt.unwrap();
+
+            // Assert that it is being sent to a valid contract
+            assert(is_valid_contract(token_output.address.address.credential.switch{
+                v: Validator => v.hash, 
+                else => error("Invalid contract address")}, settings), "Reference Token not sent to a valid contract");
+
             // Only if signed by SETTINGS_HANDLE owner 
+            assert(ctx.tx.signatories.find_safe((pubkey: PubKeyHash) -> {
+                ctx.tx.ref_inputs.find(
+                    (input: TxInput) -> Bool { input.output.value.get_safe(SETTINGS_HANDLE) == 1 }
+                ).output.address.credential.switch{
+                    p: PubKey => p.hash, 
+                    else => error("Invalid credential hash")} == pubkey}
+            ) != Option[PubKeyHash]::None, "Missing policy owner signature");
             true
         },
         else => {

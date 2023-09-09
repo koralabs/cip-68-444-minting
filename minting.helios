@@ -79,7 +79,7 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig)
     MintCost { mint_asset.price - fee, fee }
 }
 
-func isValidContract(hash: ValidatorHash, settings: MintSettings) -> Bool {
+func is_valid_contract(hash: ValidatorHash, settings: MintSettings) -> Bool {
     assert(settings.valid_contracts.any((cred: ByteArray) -> Bool {
         Credential::new_validator(hash) == Credential::new_validator(ValidatorHash::new(cred))
     }), "Contract not found in valid contracts list");
@@ -136,31 +136,21 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                 ) != Option[PubKeyHash]::None, "Missing policy owner signature");
 
             token_output_opt: Option[TxOutput] = ctx.tx.outputs.find_safe((output: TxOutput) -> {
-                output.value.contains(Value::new(AssetClass::new(), 1))
+                output.value.contains(Value::new(AssetClass::new(ctx.get_current_minting_policy_hash(), r.asset), 1))
             });
             
             assert(token_output_opt != Option[TxOutput]::None, "Reference token output missing");
             token_output: TxOutput = token_output_opt.unwrap();
             
             // Assert that it is being sent to a valid contract
-            assert(isValidContract(token_output.address.address.credential.switch{
+            assert(is_valid_contract(token_output.address.address.credential.switch{
                 v: Validator => v.hash, 
                 else => error("Invalid contract address")}, settings), "Reference Token not sent to a valid contract");
 
             // Assert there is only one
-            total: Int = ctx.tx.outputs.fold[Int]((count:Int, output:TxOutput) -> {
-                    v_opt: Option[Map[ByteArray]Int] = output.value.get_policy(ctx.get_current_minting_policy_hash());
-                    if (v_opt != Option[Map[ByteArray]Int]::None) {
-                        i_opt: Option[Int] = v_opt.unwrap().get_value_safe((key: ByteArray) -> { key == r.asset });
-                        if (i_opt != Option[Int]::None) {
-                            count + i_opt.unwrap()
-                        }
-                        else { count }
-                    }
-                    else { count }
-                }, 0);
-
-            assert(total == 1, "Only 1 Reference token can be minted with this asset name:" + r.asset);
+            assert(ctx.tx.minted.get_policy(ctx.get_current_minting_policy_hash())
+                .get_value((key: ByteArray) -> { key == r.asset }) == 1,
+                "Only 1 Reference token can be minted with this asset name:" + r.asset);
             true
         },
         else => {
