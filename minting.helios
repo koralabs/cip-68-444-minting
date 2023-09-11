@@ -9,7 +9,7 @@ enum Redeemer {
 
 struct MintConfig {
     fee_address: ByteArray
-    fee_schedule: []Map[Int]Int
+    fee_schedule: [][]Int
 }
 
 struct Utxo {
@@ -63,8 +63,8 @@ func load_settings(ctx: ScriptContext) -> PzSettings {
 }
 
 func get_mint_fee(payment: Int, config: MintConfig) -> Int {
-    (_, rate) = config.fee_schedule.sort((a:Int, _, b:Int, _) -> {a >= b}).find((key:Int, _) -> {payment >= key});
-    payment * rate
+    (_, rate) = config.fee_schedule.sort((a:[]Int, b:[]Int) -> {a.head >= b.head}).find((key:[]Int) -> {payment >= key.head});
+    (payment * rate) / 100
 }
 
 func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig) -> MintCost {
