@@ -52,14 +52,25 @@ func load_config(ctx: ScriptContext) -> MintConfig {
     config
 }
 
-func load_settings(ctx: ScriptContext) -> PzSettings {
-    settings_input: Option[TxInput] = ctx.tx.ref_inputs.find_safe((input: TxInput) -> Bool { 
+func load_settings(ctx: ScriptContext) -> (MintSettings, Bool) {
+    settings_input_ref: Option[TxInput] = ctx.tx.ref_inputs.find_safe((input: TxInput) -> Bool { 
         input.output.value.get_safe(SETTINGS_HANDLE) == 1
     });
-    assert(settings_input != Option[TxInput]::None, "settings_input reference input missing");
-    settings = MintSettings::from_data(settings_input.unwrap().output.datum.get_inline_data());
-
-    settings
+    settings_input_reg: Option[TxInput] = ctx.tx.inputs.find_safe((input: TxInput) -> Bool { 
+        input.output.value.get_safe(SETTINGS_HANDLE) == 1
+    });
+    assert(settings_input_ref != Option[TxInput]::None || settings_input_reg != Option[TxInput]::None, "settings_input reference input missing");
+    if (settings_input_reg != Option[TxInput]::None) {
+        (MintSettings::from_data(settings_input_reg.unwrap().output.datum.get_inline_data()), true)
+    }
+    else {
+        signed: Bool = ctx.tx.signatories.find_safe((pubkey: PubKeyHash) -> {
+            settings_input_ref.unwrap().output.address.credential.switch{
+                    p: PubKey => p.hash, 
+                    else => error("Invalid credential hash")} == pubkey}
+            ) != Option[PubKeyHash]::None;
+        (MintSettings::from_data(settings_input_ref.unwrap().output.datum.get_inline_data()), signed)
+    }
 }
 
 func get_mint_fee(payment: Int, config: MintConfig) -> Int {
@@ -88,7 +99,7 @@ func is_valid_contract(hash: ValidatorHash, settings: MintSettings) -> Bool {
 }
 
 func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
-    settings: MintSettings = load_settings(ctx);
+    (settings: MintSettings, signed_by_owner: Bool) = load_settings(ctx);
     redeemer.switch {
         MINT_ASSET => {
             config: MintConfig = load_config(ctx);
@@ -126,14 +137,8 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                     (input: TxInput) -> {input.output_id == TxOutputId::new(TxId::new(utxo.hash), utxo.index)}
                 ) != Option[TxInput]::None, "Required UTxO is missing");
             
-            // Only if signed by SETTINGS_HANDLE owner 
-            assert(ctx.tx.signatories.find_safe((pubkey: PubKeyHash) -> {
-                    ctx.tx.ref_inputs.find(
-                        (input: TxInput) -> Bool { input.output.value.get_safe(SETTINGS_HANDLE) == 1 }
-                    ).output.address.credential.switch{
-                        p: PubKey => p.hash, 
-                        else => error("Invalid credential hash")} == pubkey}
-                ) != Option[PubKeyHash]::None, "Missing policy owner signature");
+            // Only if signed by SETTINGS_HANDLE owner
+            assert(signed_by_owner, "Missing policy owner signature");
 
             token_output_opt: Option[TxOutput] = ctx.tx.outputs.find_safe((output: TxOutput) -> {
                 output.value.contains(Value::new(AssetClass::new(ctx.get_current_minting_policy_hash(), r.asset), 1))
@@ -158,3 +163,5 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
         }
     }
 }
+
+// TODO: Add ValidatorHash support for Reference Token endpoint
