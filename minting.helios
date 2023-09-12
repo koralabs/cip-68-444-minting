@@ -74,13 +74,13 @@ func load_settings(ctx: ScriptContext) -> (MintSettings, Bool) {
 }
 
 func get_mint_fee(payment: Int, config: MintConfig) -> Int {
-    (_, rate) = config.fee_schedule.sort((a:[]Int, b:[]Int) -> {a.head >= b.head}).find((key:[]Int) -> {payment >= key.head});
-    (payment * rate) / 100
+    rate: []Int = config.fee_schedule.sort((a:[]Int, b:[]Int) -> {a.head >= b.head}).find((key:[]Int) -> {payment >= key.head});
+    (payment * rate.get(1)) / 100
 }
 
 func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig) -> MintCost {
     // Validate it is in assets list and starts with LBL_444
-    assert(asset.name.starts_with(LBL_444), "Asset is not a (444) token");
+    assert(asset.starts_with(LBL_444), "Asset is not a (444) token");
     mint_asset_opt: Option[MintAsset] = settings.assets.find_safe((a: MintAsset) -> {
         a.name == asset
     });
@@ -112,13 +112,13 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                 output.address.credential.switch{
                     p: PubKey => {p == Credential::new_pubkey(PubKeyHash::new(settings.payment_address))}, 
                     v: Validator => {v == Credential::new_validator(ValidatorHash::new(settings.payment_address))}
-                } && output.value.lovelace >= total.payment}), "Policy minting payment is unpaid");
+                } && output.value.contains(Value::lovelace(total.payment))}), "Policy minting payment is unpaid");
             // Total to kora_fee_address contains sum of asset fees
             assert(total.fee > 0 && ctx.tx.outputs.any((output: TxOutput) -> {
                 output.address.credential.switch{
                     p: PubKey => {p == Credential::new_pubkey(PubKeyHash::new(config.fee_address))}, 
                     v: Validator => {v == Credential::new_validator(ValidatorHash::new(config.fee_address))}
-                } && output.value.lovelace >= total.payment}), "Minting fee is unpaid");
+                } && output.value.contains(Value::lovelace(total.payment))}), "Minting fee is unpaid");
             true
         },
         r: MINT_REFERENCE_TOKEN => {
@@ -126,13 +126,13 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             
             // Validate the assets have unique names
             settings.assets.for_each((asset: MintAsset) -> {
-                assert(settings.assets.filter((a: MintAsset) -> { a == asset }).length == 1, "Duplicate asset found: " + asset.show())
+                assert(settings.assets.filter((a: MintAsset) -> { a == asset }).length == 1, "Duplicate asset found: " + asset.name.show())
             });
 
             // This can only happen once per asset_name
             // It consumes the UTxO in the settings
             // Each of these UTxOs need to be created before this Tx
-            utxo: Utxo = settings.assets.filter((a: MintAsset) -> { a.name == r.asset }).get_singleton().utxo;
+            utxo: Utxo = settings.assets.filter((a: MintAsset) -> { a.name.slice(4, a.name.length) == r.asset.slice(4, r.asset.length) }).get_singleton().utxo;
             assert(ctx.tx.inputs.find_safe(
                     (input: TxInput) -> {input.output_id == TxOutputId::new(TxId::new(utxo.hash), utxo.index)}
                 ) != Option[TxInput]::None, "Required UTxO is missing");
@@ -148,14 +148,14 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             token_output: TxOutput = token_output_opt.unwrap();
             
             // Assert that it is being sent to a valid contract
-            assert(is_valid_contract(token_output.address.address.credential.switch{
+            assert(is_valid_contract(token_output.address.credential.switch{
                 v: Validator => v.hash, 
                 else => error("Invalid contract address")}, settings), "Reference Token not sent to a valid contract");
 
             // Assert there is only one
             assert(ctx.tx.minted.get_policy(ctx.get_current_minting_policy_hash())
-                .get_value((key: ByteArray) -> { key == r.asset }) == 1,
-                "Only 1 Reference token can be minted with this asset name:" + r.asset);
+                .get(r.asset) == 1,
+                "Only 1 Reference token can be minted with this asset name:" + r.asset.show());
             true
         },
         else => {
