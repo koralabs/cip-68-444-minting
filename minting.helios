@@ -21,6 +21,7 @@ struct MintAsset {
     name: ByteArray
     utxo: Utxo
     price: Int
+    valid_until: Int
 }
 
 struct MintSettings {
@@ -59,7 +60,9 @@ func load_settings(ctx: ScriptContext) -> (MintSettings, Bool) {
     settings_input_reg: Option[TxInput] = ctx.tx.inputs.find_safe((input: TxInput) -> Bool { 
         input.output.value.get_safe(SETTINGS_HANDLE) == 1
     });
+    
     assert(settings_input_ref != Option[TxInput]::None || settings_input_reg != Option[TxInput]::None, "settings_input reference input missing");
+
     if (settings_input_reg != Option[TxInput]::None) {
         (MintSettings::from_data(settings_input_reg.unwrap().output.datum.get_inline_data()), true)
     }
@@ -87,7 +90,13 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig)
     assert(mint_asset_opt != Option[MintAsset]::None, "Asset not found in policy");
     mint_asset:MintAsset = mint_asset_opt.unwrap();
     fee: Int = get_mint_fee(mint_asset.price, config);
-    MintCost { mint_asset.price - fee, fee }
+    mint_cost:MintCost = MintCost { mint_asset.price - fee, fee };
+    if (mint_asset.valid_until > 0) {
+        assert(ctx.tx.time_range.end - ctx.tx.time_range.start <= Duration::HOUR, "Invalid slot range for asset");
+        assert(ctx.tx.time_range.contains(mint_asset.valid_until), "This asset minting has expired");
+        mint_cost
+    }
+    else { mint_cost }
 }
 
 func is_valid_contract(hash: ValidatorHash, settings: MintSettings) -> Bool {
@@ -109,16 +118,12 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             }, MintCost {0, 0});
             // Total to payment_address contains sum of asset prices
             assert(total.payment > 0 && ctx.tx.outputs.any((output: TxOutput) -> {
-                output.address.credential.switch{
-                    p: PubKey => {p == Credential::new_pubkey(PubKeyHash::new(settings.payment_address))}, 
-                    v: Validator => {v == Credential::new_validator(ValidatorHash::new(settings.payment_address))}
-                } && output.value.contains(Value::lovelace(total.payment))}), "Policy minting payment is unpaid");
-            // Total to kora_fee_address contains sum of asset fees
+                output.address == Address::from_data(settings.payment_address)
+                && output.value.contains(Value::lovelace(total.payment))}), "Policy minting payment is unpaid");
+            // Total to fee_address contains sum of asset fees
             assert(total.fee > 0 && ctx.tx.outputs.any((output: TxOutput) -> {
-                output.address.credential.switch{
-                    p: PubKey => {p == Credential::new_pubkey(PubKeyHash::new(config.fee_address))}, 
-                    v: Validator => {v == Credential::new_validator(ValidatorHash::new(config.fee_address))}
-                } && output.value.contains(Value::lovelace(total.payment))}), "Minting fee is unpaid");
+                output.address == Address::from_data(config.fee_address)
+                && output.value.contains(Value::lovelace(total.payment))}), "Minting fee is unpaid");
             true
         },
         r: MINT_REFERENCE_TOKEN => {
@@ -163,5 +168,3 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
         }
     }
 }
-
-// TODO: Add ValidatorHash support for Reference Token endpoint
