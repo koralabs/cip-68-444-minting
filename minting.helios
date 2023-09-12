@@ -26,6 +26,8 @@ struct MintAsset {
 
 struct MintSettings {
     payment_address: ByteArray
+    reference_token_address: ByteArray
+    editing_contract_utxo: Utxo
     valid_contracts: []ByteArray
     assets: []MintAsset
 }
