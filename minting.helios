@@ -59,14 +59,14 @@ func load_settings(ctx: ScriptContext) -> (MintSettings, Bool) {
     settings_input_ref: Option[TxInput] = ctx.tx.ref_inputs.find_safe((input: TxInput) -> Bool { 
         input.output.value.get_safe(SETTINGS_HANDLE) == 1
     });
-    settings_input_reg: Option[TxInput] = ctx.tx.inputs.find_safe((input: TxInput) -> Bool { 
-        input.output.value.get_safe(SETTINGS_HANDLE) == 1
+    settings_output_reg: Option[TxInput] = ctx.tx.outputs.find_safe((output: TxOutput) -> Bool { 
+        output.value.get_safe(SETTINGS_HANDLE) == 1
     });
     
-    assert(settings_input_ref != Option[TxInput]::None || settings_input_reg != Option[TxInput]::None, "settings_input reference input missing");
+    assert(settings_input_ref != Option[TxInput]::None || settings_output_reg != Option[TxInput]::None, "settings_input reference input missing");
 
-    if (settings_input_reg != Option[TxInput]::None) {
-        (MintSettings::from_data(settings_input_reg.unwrap().output.datum.get_inline_data()), true)
+    if (settings_output_reg != Option[TxInput]::None) {
+        (MintSettings::from_data(settings_output_reg.unwrap().datum.get_inline_data()), true)
     }
     else {
         signed: Bool = ctx.tx.signatories.find_safe((pubkey: PubKeyHash) -> {
