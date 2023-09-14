@@ -3,10 +3,15 @@
     "version": "1.0.0",
     "description": "",
     "type": "module",
-    "scripts": {},
+    "scripts": {
+        "test": "ts-node tests/tests.ts"
+    },
     "author": "et",
     "license": "unlicense",
     "dependencies": {
         "@hyperionbt/helios": "0.15.10"
+    },
+    "devDependencies": {
+        "@types/node": "^20.6.0"
     }
 }

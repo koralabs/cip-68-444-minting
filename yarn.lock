@@ -4,5 +4,10 @@
 
 "@hyperionbt/helios@0.15.10":
   version "0.15.10"
-  resolved "https://registry.yarnpkg.com/@hyperionbt/helios/-/helios-0.15.10.tgz#96037bda4699f0a85baa965adb67b582d6ed6b79"
+  resolved "https://registry.npmjs.org/@hyperionbt/helios/-/helios-0.15.10.tgz"
   integrity sha512-TazFWhV+6ddj72aA2lpfAAItU+OxniIWWdOUgXH+1ekcsKl3O9uOJrF37fIQdN06TU+O4EtBwA5k8c7G+3DTEA==
+
+"@types/node@^20.6.0":
+  version "20.6.0"
+  resolved "https://registry.npmjs.org/@types/node/-/node-20.6.0.tgz"
+  integrity sha512-najjVq5KN2vsH2U/xyh2opaSEz6cZMR2SetLIlxlj08nOcmPOemJmUK2o4kUzfLqfrWE0PIrNeE16XhYDd3nqg==
