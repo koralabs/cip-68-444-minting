@@ -27,9 +27,9 @@ struct MintAsset {
 struct MintSettings {
     payment_address: Data
     reference_token_address: Data
-    editing_contract_utxo: Utxo
     valid_contracts: []ByteArray
     assets: []MintAsset
+    details: Map[String]Data
 }
 
 struct MintCost {
@@ -119,11 +119,11 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                 MintCost {costs.payment + (minted_cost.payment * value), costs.fee + (minted_cost.fee * value)}
             }, MintCost {0, 0});
             // Total to payment_address contains sum of asset prices
-            assert(total.payment > 0 && ctx.tx.outputs.any((output: TxOutput) -> {
+            assert(total.payment <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
                 output.address == Address::from_data(settings.payment_address)
                 && output.value.contains(Value::lovelace(total.payment))}), "Policy minting payment is unpaid");
             // Total to fee_address contains sum of asset fees
-            assert(total.fee > 0 && ctx.tx.outputs.any((output: TxOutput) -> {
+            assert(total.fee <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
                 output.address == Address::from_data(config.fee_address)
                 && output.value.contains(Value::lovelace(total.payment))}), "Minting fee is unpaid");
             true
