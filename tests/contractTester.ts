@@ -1,5 +1,5 @@
 import * as helios from '@hyperionbt/helios'
-import { Fixtures, LBL_100, LBL_444, MintingFixtures, arbitraryAddress } from './fixtures.js'
+import { EditingFixtures, Fixtures, LBL_100, LBL_444, MintingFixtures, arbitraryAddress } from './fixtures.js'
 import { Color } from './colors.js';
 helios.config.set({ IS_TESTNET: false });
 
@@ -8,6 +8,56 @@ export class Test {
   script: helios.UplcProgram;
   reset(fixtures: Fixtures | undefined) {}
   build(): helios.Tx { return new helios.Tx(); }
+}
+
+export class EditingTest extends Test {
+  input?: helios.TxInput;
+  inputRefToken?: helios.TxInput;
+  refInputSettings?: helios.TxInput;
+  output100Token?: helios.TxOutput;
+  signatories?: helios.PubKeyHash[];
+  redeemer?: helios.UplcData;
+
+  constructor (script: helios.UplcProgram, fixtures: EditingFixtures) {
+    super()
+    this.script = script;
+    if (fixtures){
+        this.input = fixtures.defaultInput;
+        this.inputRefToken = fixtures.defaultInputRefToken;
+        this.refInputSettings = fixtures.defaultRefInputSettings;
+        this.output100Token = fixtures.defaultOutput100Token;
+        this.signatories = fixtures.signatories;
+        this.redeemer = fixtures.redeemer;
+    }        
+  }
+
+  build(): helios.Tx { 
+    this.tx =  new helios.Tx(); 
+            
+    // Add fees input (minting, execution, minUTxO)
+    if (this.input)
+      this.tx.addInput(this.input)
+
+    // Add (100) ref token input
+    if (this.inputRefToken)
+      this.tx.addInput(this.inputRefToken, this.redeemer)
+    
+    // Add settings handle
+    if (this.refInputSettings)
+      this.tx.addRefInput(this.refInputSettings)
+
+    // Add editing script
+    this.tx.attachScript(this.script)
+
+    // Add (100) ref token output
+    if (this.output100Token)
+      this.tx.addOutput(this.output100Token)
+
+    if (this.signatories)
+      this.signatories.forEach(this.tx.addSigner.bind(this.tx));
+    
+    return this.tx;
+  }
 }
 
 export class MintingTest extends Test {
@@ -23,28 +73,16 @@ export class MintingTest extends Test {
   constructor (script: helios.UplcProgram, fixtures: MintingFixtures) {
     super()
     this.script = script;
-    this.reset(fixtures);
-  }
-
-  reset (fixtures: MintingFixtures | undefined) {
-      this.input = undefined;
-      this.refInputConfig = undefined;
-      this.refInputSettings = undefined;
-      this.outputPayment = undefined;
-      this.outputFee = undefined;
-      this.output444Token = undefined;
-      this.output100Token = undefined;
-      this.signatories = undefined;
-      if (fixtures){
-          this.input = fixtures.defaultInput;
-          this.refInputConfig = fixtures.defaultRefInputConfig;
-          this.refInputSettings = fixtures.defaultRefInputSettings;
-          this.outputPayment = fixtures.defaultOutputPayment;
-          this.outputFee = fixtures.defaultOutputFee;
-          this.output444Token = fixtures.defaultOutput444Token;
-          this.output100Token = fixtures.defaultOutput100Token;
-          this.signatories = fixtures.signatories;
-      }        
+    if (fixtures){
+        this.input = fixtures.defaultInput;
+        this.refInputConfig = fixtures.defaultRefInputConfig;
+        this.refInputSettings = fixtures.defaultRefInputSettings;
+        this.outputPayment = fixtures.defaultOutputPayment;
+        this.outputFee = fixtures.defaultOutputFee;
+        this.output444Token = fixtures.defaultOutput444Token;
+        this.output100Token = fixtures.defaultOutput100Token;
+        this.signatories = fixtures.signatories;
+    }        
   }
 
   build() {
@@ -71,6 +109,10 @@ export class MintingTest extends Test {
     // Add destination for minted 444
     if (this.output444Token)
         this.tx.addOutput(this.output444Token)
+
+    // Add destination for minted 100
+    if (this.output100Token)
+        this.tx.addOutput(this.output100Token)
     
     // Add minting payment
     if (this.outputPayment)

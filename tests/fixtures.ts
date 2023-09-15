@@ -11,7 +11,6 @@ export const LBL_444 = '001bc280';
 export const configHandle = `${LBL_222}${Buffer.from('mint_config_444').toString('hex')}`;
 export const settingsHandle = `${LBL_222}${Buffer.from('settings').toString('hex')}`;
 
-
 export class Fixtures {
     constructor() {}
 }
@@ -20,9 +19,6 @@ export class CommonFixtures extends Fixtures {
     settings = [
         `0x${helios.Address.fromBech32(arbitraryAddress).toHex()}`,
         `0x${helios.Address.fromBech32(arbitraryAddress).toHex()}`,
-        [
-            "0x00000000000000000000000000000000000000000000000000000000"
-        ],
         [
             [
                 `0x${LBL_444}74657374`, //test
@@ -33,19 +29,19 @@ export class CommonFixtures extends Fixtures {
             [
                 `0x${LBL_444}7465737431`, //test1
                 ["0x0000000000000000000000000000000000000000000000000000000000000001", 0],
-                10,
+                10000000,
                 0
             ],
             [
                 `0x${LBL_444}7465737432`, //test2
                 ["0x0000000000000000000000000000000000000000000000000000000000000001", 0],
-                40,
+                40000000,
                 Date.now()
             ]
         ]
     ]
     config = [
-        `0x${helios.Address.fromBech32(arbitraryAddress).toCborHex()}`,
+        `0x${helios.Address.fromBech32(arbitraryAddress).toHex()}`,
         [
             [0, 0],
             [10000000, 1000000],
@@ -56,11 +52,8 @@ export class CommonFixtures extends Fixtures {
     settingsCbor = '';
     configCbor = '';
 
-    constructor(editingValidatorHash?: string) {
+    constructor() {
         super();
-        if (editingValidatorHash){
-            this.settings[2] = [editingValidatorHash];
-        }
     }
 
     async initialize() {
@@ -101,6 +94,50 @@ export class CommonFixtures extends Fixtures {
         });
     }
 
+}
+
+export class EditingFixtures extends Fixtures {
+    defaultInput: helios.TxInput;
+    defaultInputRefToken: helios.TxInput;
+    defaultRefInputSettings: helios.TxInput;
+    defaultOutput100Token: helios.TxOutput;
+    signatories: helios.PubKeyHash[];
+    redeemer: helios.UplcData;
+
+    constructor() {
+        super();
+    }
+
+    initialize = async (policyId: string, settingsCbor:string, bgDatumCbor:string, scriptAddress: helios.Address): Promise<void> =>
+    {
+        this.defaultInput = new helios.TxInput(
+            new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000001#0`),
+            new helios.TxOutput(helios.Address.fromBech32(arbitraryAddress), new helios.Value(BigInt(100000000))
+        ));
+    
+        this.defaultInputRefToken = new helios.TxInput(
+            new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000002#0`),
+            new helios.TxOutput(scriptAddress,
+            new helios.Value(BigInt(5000000), new helios.Assets([[policyId, [[`${LBL_100}74657374`, 1]]]])),
+            helios.Datum.inline(helios.UplcData.fromCbor(bgDatumCbor))
+        ));
+    
+        this.defaultRefInputSettings = new helios.TxInput(
+            new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000003#0`),
+            new helios.TxOutput(helios.Address.fromBech32(arbitraryAddress),
+            new helios.Value(BigInt(5000000), new helios.Assets([[handlesPolicy, [[settingsHandle, 1]]]])),
+            helios.Datum.inline(helios.UplcData.fromCbor(settingsCbor))
+        ));
+    
+        this.defaultOutput100Token = new helios.TxOutput(
+            helios.Address.fromBech32(arbitraryAddress), new helios.Value(BigInt(5000000), new helios.Assets([[policyId, [[`${LBL_100}74657374`, 1]]]]))
+        );
+
+        this.signatories = [helios.PubKeyHash.fromHex(helios.Address.fromBech32(arbitraryAddress).pubKeyHash?.hex ?? '')]
+
+        this.redeemer = helios.UplcData.fromCbor([...Buffer.from('d8799f48000643b074657374ff', 'hex')]);
+    }
+        
 }
 
 export class MintingFixtures extends Fixtures {

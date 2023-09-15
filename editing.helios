@@ -6,10 +6,6 @@ enum Redeemer {
     }
 }
 
-struct Datum {
-    data: Map[String]Data
-}
-
 struct Utxo {
     hash:ByteArray
     index:Int
@@ -23,9 +19,8 @@ struct MintAsset {
 }
 
 struct MintSettings {
-    payment_address: Address
-    reference_token_address: Address
-    valid_contracts: []ByteArray
+    payment_address: ByteArray
+    reference_token_address: ByteArray
     assets: []MintAsset
     details: Option[Map[String]Data]
 }
@@ -36,11 +31,38 @@ struct MintCost {
 }
 
 const SETTINGS_HANDLE_NAME: String
+const MINTING_POLICY_ID: ByteArray
 const HANDLE_POLICY: MintingPolicyHash = MintingPolicyHash::new(#f0ff48bbb7bbe9d59a40f1ce90e9e9d0ff5002ec48f232b49ca0fb9a)
 const LBL_444: ByteArray = #001bc280 // (444)
 const LBL_222: ByteArray = #000de140 // (222)
 const LBL_100: ByteArray = #000643b0 // (100)
 const SETTINGS_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + (SETTINGS_HANDLE_NAME.encode_utf8()))
+
+func get_address_from_bytes(bytes: ByteArray) -> Address {
+    assert(bytes.length == 29 || bytes.length == 57, "Invalid address length");
+    credential: Credential = (if (bytes.slice(0,1) == #01 || bytes.slice(0,1) == #21) {
+            Credential::new_pubkey(PubKeyHash::new(bytes.slice(1, 29)))
+        }
+        else {
+            Credential::new_validator(ValidatorHash::new(bytes.slice(1, 29)))
+    });
+    staking: Option[StakingCredential] = (if(bytes.length == 57) {
+            if (bytes.slice(0,1) == #01 || bytes.slice(0,1) == #11) {
+                Option[StakingCredential]::Some{ 
+                    StakingCredential::new_hash(StakingHash::new_stakekey(StakeKeyHash::new(bytes.slice(29, 57)))) 
+                }
+            }
+            else {
+                Option[StakingCredential]::Some{
+                    StakingCredential::new_hash(StakingHash::new_validator(StakingValidatorHash::new(bytes.slice(29, 57))))
+                }
+            }
+        }
+        else {
+            Option[StakingCredential]::None
+    });
+    Address::new(credential, staking)
+}
 
 func load_settings(ctx: ScriptContext) -> (MintSettings, Bool) {
     settings_input_ref: Option[TxInput] = ctx.tx.ref_inputs.find_safe((input: TxInput) -> Bool { 
@@ -65,29 +87,19 @@ func load_settings(ctx: ScriptContext) -> (MintSettings, Bool) {
     }
 }
 
-func is_valid_contract(hash: ValidatorHash, settings: MintSettings) -> Bool {
-    assert(settings.valid_contracts.any((cred: ByteArray) -> Bool {
-        Credential::new_validator(hash) == Credential::new_validator(ValidatorHash::new(cred))
-    }), "Contract not found in valid contracts list");
-    
-    true
-}
-
 func main(_, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
     (settings: MintSettings, _) = load_settings(ctx);
     redeemer.switch {
         r: UPDATE_REFERENCE_TOKEN => {
             token_output_opt: Option[TxOutput] = ctx.tx.outputs.find_safe((output: TxOutput) -> {
-                output.value.contains(Value::new(AssetClass::new(ctx.get_current_minting_policy_hash(), r.asset), 1))
+                output.value.contains(Value::new(AssetClass::new(MintingPolicyHash::new(MINTING_POLICY_ID), r.asset), 1))
             });
             
             assert(token_output_opt != Option[TxOutput]::None, "Reference token output missing");
             token_output: TxOutput = token_output_opt.unwrap();
 
-            // Assert that it is being sent to a valid contract
-            assert(is_valid_contract(token_output.address.credential.switch{
-                v: Validator => v.hash, 
-                else => error("Invalid contract address")}, settings), "Reference Token not sent to a valid contract");
+            // Assert that it is being sent to reference_token_address
+            assert(token_output.address == get_address_from_bytes(settings.reference_token_address), "Reference Token not sent to reference_token_address");
 
             // Only if signed by SETTINGS_HANDLE owner 
             assert(ctx.tx.signatories.find_safe((pubkey: PubKeyHash) -> {
