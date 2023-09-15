@@ -23,11 +23,11 @@ struct MintAsset {
 }
 
 struct MintSettings {
-    payment_address: Data
-    reference_token_address: Data
+    payment_address: Address
+    reference_token_address: Address
     valid_contracts: []ByteArray
     assets: []MintAsset
-    details: Map[String]Data
+    details: Option[Map[String]Data]
 }
 
 struct MintCost {

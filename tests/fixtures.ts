@@ -5,58 +5,68 @@ helios.config.set({ IS_TESTNET: false });
 
 export const arbitraryAddress = 'addr1qy0vj5ktefac7mtsdrg7flef7yqhlrw8d60e86c78fctv7wz28dq2p72el5pgmwt0efgc626xkpyhswsqkyqkg622plspph4a7';
 export const handlesPolicy = helios.MintingPolicyHash.fromHex('f0ff48bbb7bbe9d59a40f1ce90e9e9d0ff5002ec48f232b49ca0fb9a');
+export const LBL_100 = '000643b0';
 export const LBL_222 = '000de140';
+export const LBL_444 = '001bc280';
 export const configHandle = `${LBL_222}${Buffer.from('mint_config_444').toString('hex')}`;
 export const settingsHandle = `${LBL_222}${Buffer.from('settings').toString('hex')}`;
 
-export class Fixtures {
-    defaultInput: helios.TxInput
-    defaultRefInputConfig: helios.TxInput
-    defaultRefInputSettings: helios.TxInput
-    defaultOutputPayment: helios.TxOutput
-    defaultOutputFee: helios.TxOutput
-    defaultOutput444Token: helios.TxOutput
 
+export class Fixtures {
+    constructor() {}
+}
+
+export class CommonFixtures extends Fixtures {
     settings = [
         `0x${helios.Address.fromBech32(arbitraryAddress).toHex()}`,
         `0x${helios.Address.fromBech32(arbitraryAddress).toHex()}`,
         [
-            "0x1822ab6f7488dd2eca47ad748d43812bb530eee7b0b6565f19f66feb",
-            "0x739cb7063d554305850f21de780eb221b9c6066596e750db4b16f2bf"
+            "0x00000000000000000000000000000000000000000000000000000000"
         ],
         [
             [
-                "0x001bc28074657374",
-                ["0x2543867d70cde652580265fecfbfb04171bd3cdce76b8af3920ec13de8c67c4f", 0],
+                `0x${LBL_444}74657374`, //test
+                ["0x0000000000000000000000000000000000000000000000000000000000000001", 0],
                 0,
                 0
             ],
             [
-                "0x001bc2807465737431",
-                ["0x2543867d70cde652580265fecfbfb04171bd3cdce76b8af3920ec13de8c67c4f", 0],
-                100,
+                `0x${LBL_444}7465737431`, //test1
+                ["0x0000000000000000000000000000000000000000000000000000000000000001", 0],
+                10,
                 0
             ],
             [
-                "0x001bc2807465737432",
-                ["0x2543867d70cde652580265fecfbfb04171bd3cdce76b8af3920ec13de8c67c4f", 0],
-                0,
-                0
+                `0x${LBL_444}7465737432`, //test2
+                ["0x0000000000000000000000000000000000000000000000000000000000000001", 0],
+                40,
+                Date.now()
             ]
         ]
     ]
     config = [
-        `0x${helios.Address.fromBech32(arbitraryAddress).toHex()}`,
+        `0x${helios.Address.fromBech32(arbitraryAddress).toCborHex()}`,
         [
             [0, 0],
             [10000000, 1000000],
-            [45000000, 25000000]
+            [40000000, 2000000],
+            [80000000, 3000000]
         ]
     ]
     settingsCbor = '';
     configCbor = '';
 
-    constructor() {}
+    constructor(editingValidatorHash?: string) {
+        super();
+        if (editingValidatorHash){
+            this.settings[2] = [editingValidatorHash];
+        }
+    }
+
+    async initialize() {
+        this.settingsCbor = await this.convertJsontoCbor(this.settings);
+        this.configCbor = await this.convertJsontoCbor(this.config);
+    }
 
     convertJsontoCbor = (json: any): Promise<string> => {
         return new Promise((resolve, reject) => {
@@ -91,40 +101,60 @@ export class Fixtures {
         });
     }
 
-    initialize = async (): Promise<void> =>
-    {
-        this.settingsCbor = await this.convertJsontoCbor(this.settings);
-        this.configCbor = await this.convertJsontoCbor(this.config);
+}
 
+export class MintingFixtures extends Fixtures {
+    defaultInput: helios.TxInput
+    defaultRefInputConfig: helios.TxInput
+    defaultRefInputSettings: helios.TxInput
+    defaultOutputPayment: helios.TxOutput
+    defaultOutputFee: helios.TxOutput
+    defaultOutput444Token: helios.TxOutput
+    defaultOutput100Token: helios.TxOutput
+    signatories: helios.PubKeyHash[]
+
+    constructor() {
+        super();
+    }
+
+    initialize = async (policyId: string, settingsCbor:string, configCbor:string): Promise<void> =>
+    {
         this.defaultInput = new helios.TxInput(
             new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000001#0`),
-            new helios.TxOutput(helios.Address.fromBech32(arbitraryAddress), new helios.Value(BigInt(1000000000))
+            new helios.TxOutput(helios.Address.fromBech32(arbitraryAddress), new helios.Value(BigInt(100000000))
         ));
     
         this.defaultRefInputConfig = new helios.TxInput(
             new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000002#0`),
             new helios.TxOutput(helios.Address.fromBech32(arbitraryAddress),
             new helios.Value(BigInt(5000000), new helios.Assets([[handlesPolicy, [[configHandle, 1]]]])),
-            helios.Datum.inline(helios.UplcData.fromCbor(this.configCbor))
+            helios.Datum.inline(helios.UplcData.fromCbor(configCbor))
         ));
     
         this.defaultRefInputSettings = new helios.TxInput(
             new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000003#0`),
             new helios.TxOutput(helios.Address.fromBech32(arbitraryAddress),
             new helios.Value(BigInt(5000000), new helios.Assets([[handlesPolicy, [[settingsHandle, 1]]]])),
-            helios.Datum.inline(helios.UplcData.fromCbor(this.settingsCbor))
+            helios.Datum.inline(helios.UplcData.fromCbor(settingsCbor))
         ));
     
         this.defaultOutputPayment = new helios.TxOutput(
-            helios.Address.fromBech32(arbitraryAddress), new helios.Value(BigInt(50000000))
+            helios.Address.fromBech32(arbitraryAddress), new helios.Value(BigInt(9000000))
         );
     
         this.defaultOutputFee = new helios.TxOutput(
-            helios.Address.fromBech32(arbitraryAddress), new helios.Value(BigInt(2000000))
+            helios.Address.fromBech32(arbitraryAddress), new helios.Value(BigInt(1000000))
         );
     
         this.defaultOutput444Token = new helios.TxOutput(
-            helios.Address.fromBech32(arbitraryAddress), new helios.Value(BigInt(50000000))
+            helios.Address.fromBech32(arbitraryAddress), new helios.Value(BigInt(5000000), new helios.Assets([[policyId, [[`${LBL_444}74657374`, 1],[`${LBL_444}7465737431`, 1]]]]))
         );
+    
+        this.defaultOutput100Token = new helios.TxOutput(
+            helios.Address.fromBech32(arbitraryAddress), new helios.Value(BigInt(5000000), new helios.Assets([[policyId, [[`${LBL_100}74657374`, 1],[`${LBL_100}7465737431`, 1]]]]))
+        );
+
+        this.signatories = [helios.PubKeyHash.fromHex(helios.Address.fromBech32(arbitraryAddress).pubKeyHash?.hex ?? '')]
     }
+        
 }

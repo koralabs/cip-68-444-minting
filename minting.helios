@@ -1,14 +1,7 @@
 minting cip_68_444_minting
 
-enum Redeemer {
-    MINT_ASSET
-    MINT_REFERENCE_TOKEN {
-        asset: ByteArray
-    }
-}
-
 struct MintConfig {
-    fee_address: Data
+    fee_address: ByteArray
     fee_schedule: [][]Int
 }
 
@@ -25,11 +18,11 @@ struct MintAsset {
 }
 
 struct MintSettings {
-    payment_address: Data
-    reference_token_address: Data
+    payment_address: ByteArray
+    reference_token_address: ByteArray
     valid_contracts: []ByteArray
     assets: []MintAsset
-    details: Map[String]Data
+    details: Option[Map[String]Data]
 }
 
 struct MintCost {
@@ -44,6 +37,32 @@ const LBL_222: ByteArray = #000de140 // (222)
 const LBL_100: ByteArray = #000643b0 // (100)
 const SETTINGS_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + (SETTINGS_HANDLE_NAME.encode_utf8()))
 const CONFIG_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + ("mint_config_444".encode_utf8()))
+
+func get_address_from_bytes(bytes: ByteArray) -> Address {
+    assert(bytes.length == 29 || bytes.length == 57, "Invalid address length");
+    credential: Credential = (if (bytes.slice(0,1) == #01 || bytes.slice(0,1) == #21) {
+            Credential::new_pubkey(PubKeyHash::new(bytes.slice(1, 29)))
+        }
+        else {
+            Credential::new_validator(ValidatorHash::new(bytes.slice(1, 29)))
+    });
+    staking: Option[StakingCredential] = (if(bytes.length == 57) {
+            if (bytes.slice(0,1) == #01 || bytes.slice(0,1) == #11) {
+                Option[StakingCredential]::Some{ 
+                    StakingCredential::new_hash(StakingHash::new_stakekey(StakeKeyHash::new(bytes.slice(29, 57)))) 
+                }
+            }
+            else {
+                Option[StakingCredential]::Some{
+                    StakingCredential::new_hash(StakingHash::new_validator(StakingValidatorHash::new(bytes.slice(29, 57))))
+                }
+            }
+        }
+        else {
+            Option[StakingCredential]::None
+    });
+    Address::new(credential, staking)
+}
 
 func load_config(ctx: ScriptContext) -> MintConfig {
     config_input: Option[TxInput] = ctx.tx.ref_inputs.find_safe((input: TxInput) -> Bool { 
@@ -79,7 +98,9 @@ func load_settings(ctx: ScriptContext) -> (MintSettings, Bool) {
 }
 
 func get_mint_fee(payment: Int, config: MintConfig) -> Int {
-    fee: []Int = config.fee_schedule.sort((a:[]Int, b:[]Int) -> {a.head >= b.head}).find((key:[]Int) -> {payment >= key.head});
+    fee: []Int = config.fee_schedule.sort((a:[]Int, b:[]Int) -> {a.head >= b.head}).find((key:[]Int) -> {
+        payment >= key.head
+    });
     fee.get(1)
 }
 
@@ -94,79 +115,67 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig,
     fee: Int = get_mint_fee(mint_asset.price, config);
     mint_cost:MintCost = MintCost { mint_asset.price - fee, fee };
     if (mint_asset.valid_until > 0) {
-        assert(ctx.tx.time_range.end - ctx.tx.time_range.start <= Duration::HOUR, "Invalid slot range for asset");
+        assert(ctx.tx.time_range.end - ctx.tx.time_range.start >= Duration::new(15 * 60 * 1000), "Invalid slot range for asset");
         assert(ctx.tx.time_range.contains(Time::new(mint_asset.valid_until)), "This asset minting has expired");
         mint_cost
     }
     else { mint_cost }
 }
 
-func is_valid_contract(hash: ValidatorHash, settings: MintSettings) -> Bool {
-    assert(settings.valid_contracts.any((cred: ByteArray) -> Bool {
-        Credential::new_validator(hash) == Credential::new_validator(ValidatorHash::new(cred))
-    }), "Contract not found in valid contracts list");
+func main(_, ctx: ScriptContext) -> Bool {
+    minted_assets: Map[ByteArray]Int = ctx.tx.minted.get_policy(ctx.get_current_minting_policy_hash());
+    (settings: MintSettings, signed_by_owner: Bool) = load_settings(ctx);
+    //print("settings = " + settings.serialize().show());
+    // Validate the assets have unique names
+    settings.assets.for_each((asset: MintAsset) -> {
+        assert(settings.assets.filter((a: MintAsset) -> { a == asset }).length <= 1, "Duplicate asset found: " + asset.name.show())
+    });
+    config: MintConfig = (if (minted_assets.any((asset_name: ByteArray, _) -> {asset_name.starts_with(LBL_444)})) {load_config(ctx)} else {MintConfig{#, [][]Int{}}});
+    total: MintCost = minted_assets.fold[MintCost]((costs:MintCost, key: ByteArray, value: Int) -> {
+        if (key.starts_with(LBL_444)) {
+            //MINT_ASSET
+            minted_cost: MintCost = get_mint_cost(key, settings, config, ctx);
+            MintCost {costs.payment + (if (signed_by_owner) { 0 } else { minted_cost.payment }), costs.fee + minted_cost.fee }
+        }
+        else
+            {   
+                if (key.starts_with(LBL_100)) { //MINT_REFERENCE_TOKEN
+                    // This can only happen once per asset_name
+                    // It consumes the UTxO in the settings
+                    utxo: Utxo = settings.assets.filter((a: MintAsset) -> { 
+                        a.name.slice(4, a.name.length) == key.slice(4, key.length) 
+                    }).get_singleton().utxo;
+
+                    assert(ctx.tx.inputs.find_safe(
+                            (input: TxInput) -> {input.output_id == TxOutputId::new(TxId::new(utxo.hash), utxo.index)}
+                        ) != Option[TxInput]::None, "Required UTxO is missing");
+                    
+                    // Only if signed by SETTINGS_HANDLE owner
+                    assert(signed_by_owner, "Missing policy owner signature");
+
+                    token_output: TxOutput = ctx.tx.outputs.find((output: TxOutput) -> {
+                        output.value.contains(Value::new(AssetClass::new(ctx.get_current_minting_policy_hash(), key), 1))
+                    });
+                    
+                    // Assert that it is being sent to a valid contract
+                    assert(token_output.address == get_address_from_bytes(settings.reference_token_address), "Reference Token not sent to a valid contract");
+
+                    // Assert there is only one
+                    assert(minted_assets.get(key) == 1, "Only 1 Reference token can be minted with this asset name:" + key.show());
+                    costs
+                }
+            else { error("Invalid asset_name_label for this policy. Must be (100) or (444)") }
+        }
+    }, MintCost {0, 0});
+    // Total to payment_address contains sum of asset prices
+    assert(total.payment <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
+        output.address == get_address_from_bytes(settings.payment_address)
+        && output.value.contains(Value::lovelace(total.payment))}), "Policy minting payment is unpaid");
+        
+    // Total to fee_address contains sum of asset fees
+    assert(total.fee <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
+        output.address == get_address_from_bytes(config.fee_address)
+        && output.value.contains(Value::lovelace(total.payment))}), "Minting fee is unpaid");
     
     true
-}
-
-func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
-    (settings: MintSettings, signed_by_owner: Bool) = load_settings(ctx);
-    redeemer.switch {
-        MINT_ASSET => {
-            config: MintConfig = load_config(ctx);
-            total: MintCost = ctx.tx.minted.get_policy(ctx.get_current_minting_policy_hash()).fold[MintCost]((costs:MintCost, key: ByteArray, value: Int) -> {
-                minted_cost: MintCost = get_mint_cost(key, settings, config, ctx);
-                MintCost {costs.payment + (minted_cost.payment * value), costs.fee + (minted_cost.fee * value)}
-            }, MintCost {0, 0});
-            // Total to payment_address contains sum of asset prices
-            assert(total.payment <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
-                output.address == Address::from_data(settings.payment_address)
-                && output.value.contains(Value::lovelace(total.payment))}), "Policy minting payment is unpaid");
-            // Total to fee_address contains sum of asset fees
-            assert(total.fee <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
-                output.address == Address::from_data(config.fee_address)
-                && output.value.contains(Value::lovelace(total.payment))}), "Minting fee is unpaid");
-            true
-        },
-        r: MINT_REFERENCE_TOKEN => {
-            assert(r.asset.starts_with(LBL_100), "Asset is not a (100) token");
-            
-            // Validate the assets have unique names
-            settings.assets.for_each((asset: MintAsset) -> {
-                assert(settings.assets.filter((a: MintAsset) -> { a == asset }).length == 1, "Duplicate asset found: " + asset.name.show())
-            });
-
-            // This can only happen once per asset_name
-            // It consumes the UTxO in the settings
-            // Each of these UTxOs need to be created before this Tx
-            utxo: Utxo = settings.assets.filter((a: MintAsset) -> { a.name.slice(4, a.name.length) == r.asset.slice(4, r.asset.length) }).get_singleton().utxo;
-            assert(ctx.tx.inputs.find_safe(
-                    (input: TxInput) -> {input.output_id == TxOutputId::new(TxId::new(utxo.hash), utxo.index)}
-                ) != Option[TxInput]::None, "Required UTxO is missing");
-            
-            // Only if signed by SETTINGS_HANDLE owner
-            assert(signed_by_owner, "Missing policy owner signature");
-
-            token_output_opt: Option[TxOutput] = ctx.tx.outputs.find_safe((output: TxOutput) -> {
-                output.value.contains(Value::new(AssetClass::new(ctx.get_current_minting_policy_hash(), r.asset), 1))
-            });
-            
-            assert(token_output_opt != Option[TxOutput]::None, "Reference token output missing");
-            token_output: TxOutput = token_output_opt.unwrap();
-            
-            // Assert that it is being sent to a valid contract
-            assert(is_valid_contract(token_output.address.credential.switch{
-                v: Validator => v.hash, 
-                else => error("Invalid contract address")}, settings), "Reference Token not sent to a valid contract");
-
-            // Assert there is only one
-            assert(ctx.tx.minted.get_policy(ctx.get_current_minting_policy_hash())
-                .get(r.asset) == 1,
-                "Only 1 Reference token can be minted with this asset name:" + r.asset.show());
-            true
-        },
-        else => {
-            false
-        }
-    }
 }

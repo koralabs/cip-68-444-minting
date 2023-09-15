@@ -1,32 +1,40 @@
 import * as helios from '@hyperionbt/helios'
-import { Fixtures, arbitraryAddress } from './fixtures.js'
+import { Fixtures, LBL_100, LBL_444, MintingFixtures, arbitraryAddress } from './fixtures.js'
 import { Color } from './colors.js';
 helios.config.set({ IS_TESTNET: false });
 
 export class Test {
   tx?: helios.Tx;
   script: helios.UplcProgram;
+  reset(fixtures: Fixtures | undefined) {}
+  build(): helios.Tx { return new helios.Tx(); }
+}
+
+export class MintingTest extends Test {
   input?: helios.TxInput;
   refInputConfig?: helios.TxInput;
   refInputSettings?: helios.TxInput;
   outputPayment?: helios.TxOutput;
   outputFee?: helios.TxOutput;
   output444Token?: helios.TxOutput;
-  logSwitch: any;
-  logger: any;
+  output100Token?: helios.TxOutput;
+  signatories?: helios.PubKeyHash[];
 
-  constructor (script: helios.UplcProgram, fixtures: Fixtures) {
+  constructor (script: helios.UplcProgram, fixtures: MintingFixtures) {
+    super()
     this.script = script;
     this.reset(fixtures);
   }
 
-  reset (fixtures: Fixtures | undefined) {
+  reset (fixtures: MintingFixtures | undefined) {
       this.input = undefined;
       this.refInputConfig = undefined;
       this.refInputSettings = undefined;
       this.outputPayment = undefined;
       this.outputFee = undefined;
       this.output444Token = undefined;
+      this.output100Token = undefined;
+      this.signatories = undefined;
       if (fixtures){
           this.input = fixtures.defaultInput;
           this.refInputConfig = fixtures.defaultRefInputConfig;
@@ -34,6 +42,8 @@ export class Test {
           this.outputPayment = fixtures.defaultOutputPayment;
           this.outputFee = fixtures.defaultOutputFee;
           this.output444Token = fixtures.defaultOutput444Token;
+          this.output100Token = fixtures.defaultOutput100Token;
+          this.signatories = fixtures.signatories;
       }        
   }
 
@@ -56,7 +66,7 @@ export class Test {
     this.tx.attachScript(this.script)
     
     // Mint a 444
-    this.tx.mintTokens(this.script.mintingPolicyHash, [['001bc28074657374', BigInt(1)]], helios.UplcData.fromCbor('d8799fff'))
+    this.tx.mintTokens(this.script.mintingPolicyHash, [[`${LBL_444}74657374`, BigInt(1)], [`${LBL_444}7465737431`, BigInt(1)],[`${LBL_100}74657374`, BigInt(1)], [`${LBL_100}7465737431`, BigInt(1)]], helios.UplcData.fromCbor('d8799fff'))
     
     // Add destination for minted 444
     if (this.output444Token)
@@ -69,11 +79,11 @@ export class Test {
     // Add minting fee
     if (this.outputFee)
         this.tx.addOutput(this.outputFee)
-    return this;
-  }
 
-  async execute(networkParams: helios.NetworkParams) {
-      await this.tx?.finalize(networkParams, helios.Address.fromBech32(arbitraryAddress));
+    if (this.signatories)
+      this.signatories.forEach(this.tx.addSigner.bind(this.tx));
+
+    return this.tx;
   }
 }
 
@@ -130,12 +140,12 @@ export class ContractTester {
               //*******************************
 
               try {
-                await test.build().execute(this.networkParams);
+                const tx = await test.build().finalize(this.networkParams, helios.Address.fromBech32(arbitraryAddress));
+                //console.log(tx?.toCborHex())
                 // SUCCESS
                 this.logTest(shouldApprove, group, name, cb.consoleMessages, message);
               }
               catch (error: any) {
-                  //this.hijackConsoleLog(false);
                   this.logTest(shouldApprove, group, name, cb.consoleMessages, message, error);
               }
             }
