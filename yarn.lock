@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@hyperionbt/helios@0.15.10":
-  version "0.15.10"
-  resolved "https://registry.npmjs.org/@hyperionbt/helios/-/helios-0.15.10.tgz"
-  integrity sha512-TazFWhV+6ddj72aA2lpfAAItU+OxniIWWdOUgXH+1ekcsKl3O9uOJrF37fIQdN06TU+O4EtBwA5k8c7G+3DTEA==
+"@hyperionbt/helios@0.15.11":
+  version "0.15.11"
+  resolved "https://registry.yarnpkg.com/@hyperionbt/helios/-/helios-0.15.11.tgz#53868aef9231a7bf009d3dd14fd8cf17f22dd30b"
+  integrity sha512-Dr48bPRTTsmrhlrtNFWg0HK6i59A2matsPrQimu3a6VhaAsXp1Sc3uYQGYyPJPa4eN72hxDC6QBCMnDOpqbBsA==
 
 "@types/node@^20.6.0":
   version "20.6.0"

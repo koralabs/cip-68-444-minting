@@ -9,7 +9,7 @@
     "author": "et",
     "license": "unlicense",
     "dependencies": {
-        "@hyperionbt/helios": "0.15.10"
+        "@hyperionbt/helios": "0.15.11"
     },
     "devDependencies": {
         "@types/node": "^20.6.0"

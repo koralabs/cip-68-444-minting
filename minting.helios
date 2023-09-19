@@ -48,7 +48,7 @@ func get_address_from_bytes(bytes: ByteArray) -> Address {
     staking: Option[StakingCredential] = (if(bytes.length == 57) {
             if (bytes.slice(0,1) == #01 || bytes.slice(0,1) == #11) {
                 Option[StakingCredential]::Some{ 
-                    StakingCredential::new_hash(StakingHash::new_stakekey(StakeKeyHash::new(bytes.slice(29, 57)))) 
+                    StakingCredential::new_hash(StakingHash::new_stakekey(PubKeyHash::new(bytes.slice(29, 57)))) 
                 }
             }
             else {
