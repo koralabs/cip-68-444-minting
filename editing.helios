@@ -88,7 +88,7 @@ func load_settings(ctx: ScriptContext) -> (MintSettings, Bool) {
 }
 
 func main(_, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
-    (settings: MintSettings, _) = load_settings(ctx);
+    (settings: MintSettings, signed_by_owner: Bool) = load_settings(ctx);
     redeemer.switch {
         r: UPDATE_REFERENCE_TOKEN => {
             token_output_opt: Option[TxOutput] = ctx.tx.outputs.find_safe((output: TxOutput) -> {
@@ -102,13 +102,7 @@ func main(_, redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             assert(token_output.address == get_address_from_bytes(settings.reference_token_address), "Reference Token not sent to reference_token_address");
 
             // Only if signed by SETTINGS_HANDLE owner 
-            assert(ctx.tx.signatories.find_safe((pubkey: PubKeyHash) -> {
-                ctx.tx.ref_inputs.find(
-                    (input: TxInput) -> Bool { input.output.value.get_safe(SETTINGS_HANDLE) == 1 }
-                ).output.address.credential.switch{
-                    p: PubKey => p.hash, 
-                    else => error("Invalid credential hash")} == pubkey}
-            ) != Option[PubKeyHash]::None, "Missing policy owner signature");
+            assert(signed_by_owner, "Missing policy owner signature");
             true
         },
         else => {
