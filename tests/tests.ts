@@ -30,10 +30,15 @@ const runTests = async () => {
     
     Promise.all([
         // Minting Contract - SHOULD APPROVE
-        tester.test(new MintingTest(mintingContract, mintingFixtures), true, "MINTING", "happy path"),
+        tester.test("MINTING", "happy path", new MintingTest(mintingContract, () => mintingFixtures), true),
+        // tester.test("MINTING", "discounts", new MintingTest(mintingContract, () => mintingFixtures, () => {
+        //     const tx = new helios.Tx
+        //     tx.addInput(); //add the proof of discount UTxO
+        //     return tx;
+        // }), true),
         
         // Editing Contract - SHOULD APPROVE
-        tester.test(new EditingTest(editingContract, editingFixtures), true, "EDITING", "happy path"),
+        tester.test("EDITING", "happy path", new EditingTest(editingContract, () => editingFixtures), true),
     ]
     ).then(() => {tester.displayStats()});
 }

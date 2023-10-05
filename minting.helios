@@ -20,6 +20,7 @@ struct MintAsset {
     utxo: Utxo
     price: Int
     valid_until: Int
+    discount: Map[ByteArray]Map[Int]Int
 }
 
 struct MintSettings {
@@ -116,8 +117,27 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig,
     });
     assert(mint_asset_opt != Option[MintAsset]::None, "Asset not found in policy");
     mint_asset:MintAsset = mint_asset_opt.unwrap();
-    fee: Int = get_mint_fee(mint_asset.price, config);
-    mint_cost:MintCost = MintCost { mint_asset.price - fee, fee };
+    discounted_price: Int =
+        if (mint_asset.discount == Map[ByteArray]Map[Int]Int{}) { 
+            mint_asset.price }
+        else {
+            mint_asset.discount.fold[Int]((discounta: Int, policy: ByteArray, discount: Map[Int]Int) -> {
+                discount.sort((a: Int, _, b: Int, _) -> {a > b}).fold((discountb:Int, count: Int, price: Int) -> {
+                    if (ctx.tx.outputs.any((output: TxOutput) -> {
+                        output.value.to_map().get_safe(MintingPolicyHash::new(policy.slice(0,28))).switch{
+                            Some{assets} => {
+                                assets.any((a: ByteArray, total: Int) -> {
+                                    if (policy.length > 28) { a.starts_with(policy.slice(28, policy.length)) && total >= count } 
+                                    else { total >= count }})
+                            },
+                            else => false}
+                    })) { price }
+                    else {discountb}
+                }, discounta)
+            }, mint_asset.price)
+    };
+    fee: Int = get_mint_fee(discounted_price, config);
+    mint_cost:MintCost = MintCost { discounted_price - fee, fee };
     if (mint_asset.valid_until > 0) {
         assert(ctx.tx.time_range.end - ctx.tx.time_range.start >= Duration::new(15 * 60 * 1000), "Invalid slot range for asset");
         assert(ctx.tx.time_range.contains(Time::new(mint_asset.valid_until)), "This asset minting has expired");

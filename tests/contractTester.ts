@@ -4,8 +4,11 @@ import { Color } from './colors.js';
 helios.config.set({ IS_TESTNET: false });
 
 export class Test {
-  tx?: helios.Tx;
+  tx: helios.Tx;
   script: helios.UplcProgram;
+  constructor (setupTx?: () => helios.Tx) {
+    this.tx = setupTx ? setupTx() : new helios.Tx();   
+  }
   reset(fixtures: Fixtures | undefined) {}
   build(): helios.Tx { return new helios.Tx(); }
 }
@@ -18,22 +21,21 @@ export class EditingTest extends Test {
   signatories?: helios.PubKeyHash[];
   redeemer?: helios.UplcData;
 
-  constructor (script: helios.UplcProgram, fixtures: EditingFixtures) {
-    super()
+  constructor (script: helios.UplcProgram, fixtures: () => EditingFixtures, setupTx?: () => helios.Tx) {
+    super(setupTx);
     this.script = script;
     if (fixtures){
-        this.input = fixtures.defaultInput;
-        this.inputRefToken = fixtures.defaultInputRefToken;
-        this.refInputSettings = fixtures.defaultRefInputSettings;
-        this.output100Token = fixtures.defaultOutput100Token;
-        this.signatories = fixtures.signatories;
-        this.redeemer = fixtures.redeemer;
+      const fixture = fixtures();
+        this.input = fixture.defaultInput;
+        this.inputRefToken = fixture.defaultInputRefToken;
+        this.refInputSettings = fixture.defaultRefInputSettings;
+        this.output100Token = fixture.defaultOutput100Token;
+        this.signatories = fixture.signatories;
+        this.redeemer = fixture.redeemer;
     }        
   }
 
-  build(): helios.Tx { 
-    this.tx =  new helios.Tx(); 
-            
+  build(): helios.Tx {             
     // Add fees input (minting, execution, minUTxO)
     if (this.input)
       this.tx.addInput(this.input)
@@ -70,24 +72,23 @@ export class MintingTest extends Test {
   output100Token?: helios.TxOutput;
   signatories?: helios.PubKeyHash[];
 
-  constructor (script: helios.UplcProgram, fixtures: MintingFixtures) {
-    super()
+  constructor (script: helios.UplcProgram, fixtures: () => MintingFixtures, setupTx?: () => helios.Tx) {
+    super(setupTx);
     this.script = script;
     if (fixtures){
-        this.input = fixtures.defaultInput;
-        this.refInputConfig = fixtures.defaultRefInputConfig;
-        this.refInputSettings = fixtures.defaultRefInputSettings;
-        this.outputPayment = fixtures.defaultOutputPayment;
-        this.outputFee = fixtures.defaultOutputFee;
-        this.output444Token = fixtures.defaultOutput444Token;
-        this.output100Token = fixtures.defaultOutput100Token;
-        this.signatories = fixtures.signatories;
+      const fixture = fixtures();
+        this.input = fixture.defaultInput;
+        this.refInputConfig = fixture.defaultRefInputConfig;
+        this.refInputSettings = fixture.defaultRefInputSettings;
+        this.outputPayment = fixture.defaultOutputPayment;
+        this.outputFee = fixture.defaultOutputFee;
+        this.output444Token = fixture.defaultOutput444Token;
+        this.output100Token = fixture.defaultOutput100Token;
+        this.signatories = fixture.signatories;
     }        
   }
 
-  build() {
-    this.tx = new helios.Tx();
-            
+  build() {            
     // Add fees input (minting, execution, minUTxO)
     if (this.input)
         this.tx.addInput(this.input)
@@ -165,7 +166,7 @@ export class ContractTester {
       return `${this.groupName}${this.testName}`.replace(/[^a-z0-9]/gi, '');
     }
 
-    async test(test: Test, shouldApprove: boolean, group: string, name: string, message=null) {
+    async test(group: string, name: string, test: Test, shouldApprove: boolean, message=null) {
         if (this.groupName == null || group == this.groupName) {
             if (this.testName == null || name == this.testName) {
               this.testCount++;
