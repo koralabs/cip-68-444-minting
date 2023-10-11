@@ -16,6 +16,7 @@ struct MintAsset {
     utxo: Utxo
     price: Int
     valid_until: Int
+    discount: Map[ByteArray]Map[Int]Int
 }
 
 struct MintSettings {
@@ -40,7 +41,7 @@ const SETTINGS_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + (SE
 
 func get_address_from_bytes(bytes: ByteArray) -> Address {
     assert(bytes.length == 29 || bytes.length == 57, "Invalid address length");
-    credential: Credential = (if (bytes.slice(0,1) == #01 || bytes.slice(0,1) == #21) {
+    credential: Credential = (if (bytes.slice(0,1) == #01 || bytes.slice(0,1) == #21 || bytes.slice(0,1) == #61) {
             Credential::new_pubkey(PubKeyHash::new(bytes.slice(1, 29)))
         }
         else {

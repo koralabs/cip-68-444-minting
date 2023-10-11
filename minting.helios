@@ -45,7 +45,7 @@ const CONFIG_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + ("min
 
 func get_address_from_bytes(bytes: ByteArray) -> Address {
     assert(bytes.length == 29 || bytes.length == 57, "Invalid address length");
-    credential: Credential = (if (bytes.slice(0,1) == #01 || bytes.slice(0,1) == #21) {
+    credential: Credential = (if (bytes.slice(0,1) == #01 || bytes.slice(0,1) == #21 || bytes.slice(0,1) == #61) {
             Credential::new_pubkey(PubKeyHash::new(bytes.slice(1, 29)))
         }
         else {
@@ -87,7 +87,7 @@ func load_settings(ctx: ScriptContext) -> (MintSettings, Bool) {
         output.value.get_safe(SETTINGS_HANDLE) == 1
     });
     
-    assert(settings_input_ref != Option[TxInput]::None || settings_output_reg != Option[TxOutput]::None, "settings reference input missing");
+    assert(settings_input_ref != Option[TxInput]::None || settings_output_reg != Option[TxOutput]::None, "settings input missing");
 
     if (settings_output_reg != Option[TxOutput]::None) {
         (MintSettings::from_data(settings_output_reg.unwrap().datum.get_inline_data()), true)
@@ -139,7 +139,8 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig,
     fee: Int = get_mint_fee(discounted_price, config);
     mint_cost:MintCost = MintCost { discounted_price - fee, fee };
     if (mint_asset.valid_until > 0) {
-        assert(ctx.tx.time_range.end - ctx.tx.time_range.start >= Duration::new(15 * 60 * 1000), "Invalid slot range for asset");
+        //print("start = " + ctx.tx.time_range.start.serialize().show() + ", expires = " + Time::new(mint_asset.valid_until).serialize().show() + ", end = " + ctx.tx.time_range.end.serialize().show());
+        assert(ctx.tx.time_range.end - ctx.tx.time_range.start <= Duration::new(15 * 60 * 1000), "Invalid slot range for asset");
         assert(ctx.tx.time_range.contains(Time::new(mint_asset.valid_until)), "This asset minting has expired");
         mint_cost
     }
@@ -159,10 +160,9 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             config: MintConfig = (if (minted_assets.any((asset_name: ByteArray, _) -> {asset_name.starts_with(LBL_444)})) {load_config(ctx)} else {MintConfig{#, [][]Int{}}});
 
             total: MintCost = minted_assets.fold[MintCost]((costs:MintCost, key: ByteArray, value: Int) -> {
-                if (key.starts_with(LBL_444)) {
-                    //MINT_ASSET
+                if (key.starts_with(LBL_444)) { //MINT_ASSET
                     minted_cost: MintCost = get_mint_cost(key, settings, config, ctx);
-                    MintCost {costs.payment + (if (signed_by_owner) { 0 } else { minted_cost.payment }), costs.fee + minted_cost.fee }
+                    MintCost {costs.payment + (if (signed_by_owner) { 0 } else { minted_cost.payment }) * value, costs.fee + minted_cost.fee * value }
                 }
                 else
                     {   
@@ -198,11 +198,10 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             assert(total.payment <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
                 output.address == get_address_from_bytes(settings.payment_address)
                 && output.value.contains(Value::lovelace(total.payment))}), "Policy minting payment is unpaid");
-            
             // Total to fee_address contains sum of asset fees
             assert(total.fee <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
                 output.address == get_address_from_bytes(config.fee_address)
-                && output.value.contains(Value::lovelace(total.payment))}), "Minting fee is unpaid");
+                && output.value.contains(Value::lovelace(total.fee))}), "Minting fee is unpaid");
             
             true
         },

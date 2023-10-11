@@ -1,130 +1,51 @@
 import * as helios from '@hyperionbt/helios'
-import { EditingFixtures, Fixtures, LBL_100, LBL_444, MintingFixtures, arbitraryAddress } from './fixtures.js'
+import { Fixtures } from './fixtures.js'
 import { Color } from './colors.js';
 helios.config.set({ IS_TESTNET: false });
 
 export class Test {
   tx: helios.Tx;
   script: helios.UplcProgram;
-  constructor (setupTx?: () => helios.Tx) {
-    this.tx = setupTx ? setupTx() : new helios.Tx();   
-  }
-  reset(fixtures: Fixtures | undefined) {}
-  build(): helios.Tx { return new helios.Tx(); }
-}
-
-export class EditingTest extends Test {
-  input?: helios.TxInput;
-  inputRefToken?: helios.TxInput;
-  refInputSettings?: helios.TxInput;
-  output100Token?: helios.TxOutput;
+  inputs?: helios.TxInput[];
+  refInputs?: helios.TxInput[];
+  outputs?: helios.TxOutput[];
   signatories?: helios.PubKeyHash[];
+  minted?: [helios.ByteArray | helios.ByteArrayProps, helios.HInt | helios.HIntProps][];
   redeemer?: helios.UplcData;
-
-  constructor (script: helios.UplcProgram, fixtures: () => EditingFixtures, setupTx?: () => helios.Tx) {
-    super(setupTx);
-    this.script = script;
+  
+  constructor (script: helios.Program, fixtures: () => Fixtures, setupTx?: () => helios.Tx) {
+    this.script = script.compile(); // We have to compile again for each test due to shared console logging.
+    this.tx = setupTx ? setupTx() : new helios.Tx();   
     if (fixtures){
       const fixture = fixtures();
-        this.input = fixture.defaultInput;
-        this.inputRefToken = fixture.defaultInputRefToken;
-        this.refInputSettings = fixture.defaultRefInputSettings;
-        this.output100Token = fixture.defaultOutput100Token;
-        this.signatories = fixture.signatories;
-        this.redeemer = fixture.redeemer;
+      this.inputs = fixture.inputs;
+      this.refInputs = fixture.refInputs;
+      this.outputs = fixture.outputs;
+      this.signatories = fixture.signatories;
+      this.minted = fixture.minted;
+      this.redeemer = fixture.redeemer;
     }        
   }
 
-  build(): helios.Tx {             
-    // Add fees input (minting, execution, minUTxO)
-    if (this.input)
-      this.tx.addInput(this.input)
+  reset(fixtures: Fixtures | undefined) {}
 
-    // Add (100) ref token input
-    if (this.inputRefToken)
-      this.tx.addInput(this.inputRefToken, this.redeemer)
+  build() {
+    if (this.inputs)
+        this.inputs.forEach((input, index) => this.tx.addInput(input, index == (this.inputs?.length ?? 0) - 1 ? this.redeemer : undefined));
+
+    if (this.refInputs)
+      this.refInputs.forEach((input) => this.tx.addRefInput(input));
     
-    // Add settings handle
-    if (this.refInputSettings)
-      this.tx.addRefInput(this.refInputSettings)
-
-    // Add editing script
-    this.tx.attachScript(this.script)
-
-    // Add (100) ref token output
-    if (this.output100Token)
-      this.tx.addOutput(this.output100Token)
-
-    if (this.signatories)
-      this.signatories.forEach(this.tx.addSigner.bind(this.tx));
-    
-    return this.tx;
-  }
-}
-
-export class MintingTest extends Test {
-  input?: helios.TxInput;
-  refInputConfig?: helios.TxInput;
-  refInputSettings?: helios.TxInput;
-  outputPayment?: helios.TxOutput;
-  outputFee?: helios.TxOutput;
-  output444Token?: helios.TxOutput;
-  output100Token?: helios.TxOutput;
-  signatories?: helios.PubKeyHash[];
-
-  constructor (script: helios.UplcProgram, fixtures: () => MintingFixtures, setupTx?: () => helios.Tx) {
-    super(setupTx);
-    this.script = script;
-    if (fixtures){
-      const fixture = fixtures();
-        this.input = fixture.defaultInput;
-        this.refInputConfig = fixture.defaultRefInputConfig;
-        this.refInputSettings = fixture.defaultRefInputSettings;
-        this.outputPayment = fixture.defaultOutputPayment;
-        this.outputFee = fixture.defaultOutputFee;
-        this.output444Token = fixture.defaultOutput444Token;
-        this.output100Token = fixture.defaultOutput100Token;
-        this.signatories = fixture.signatories;
-    }        
-  }
-
-  build() {            
-    // Add fees input (minting, execution, minUTxO)
-    if (this.input)
-        this.tx.addInput(this.input)
-    
-    // Add settings handle
-    if (this.refInputSettings)
-        this.tx.addRefInput(this.refInputSettings)
-    
-    // Add config handle
-    if (this.refInputConfig)
-        this.tx.addRefInput(this.refInputConfig)
-    
-    // Add minting script
     this.tx.attachScript(this.script)
     
-    // Mint a 444
-    this.tx.mintTokens(this.script.mintingPolicyHash, [[`${LBL_444}74657374`, BigInt(1)], [`${LBL_444}7465737431`, BigInt(1)],[`${LBL_100}74657374`, BigInt(1)], [`${LBL_100}7465737431`, BigInt(1)]], helios.UplcData.fromCbor('d8799fff'))
+    if (this.minted)
+      this.tx.mintTokens(this.script.mintingPolicyHash, this.minted, helios.UplcData.fromCbor('d8799fff'))
     
-    // Add destination for minted 444
-    if (this.output444Token)
-        this.tx.addOutput(this.output444Token)
-
-    // Add destination for minted 100
-    if (this.output100Token)
-        this.tx.addOutput(this.output100Token)
-    
-    // Add minting payment
-    if (this.outputPayment)
-        this.tx.addOutput(this.outputPayment)
-    
-    // Add minting fee
-    if (this.outputFee)
-        this.tx.addOutput(this.outputFee)
+    if (this.outputs)
+      this.outputs.forEach((output) => this.tx.addOutput(output));
 
     if (this.signatories)
-      this.signatories.forEach(this.tx.addSigner.bind(this.tx));
+      this.signatories.forEach((signer) => this.tx.addSigner(signer));
 
     return this.tx;
   }
@@ -141,11 +62,13 @@ export class ContractTester {
     consoleLog: any;
     consoleWarn:any;
     consoleInfo:any;
+    changeAddress: string;
   
-    constructor () {
+    constructor (changeAddress: string) {
         this.consoleLog = console.log;
         this.consoleWarn = console.warn;
         this.consoleInfo = console.info;
+        this.changeAddress = changeAddress;
     }
 
     async init (groupName?: string, testName?: string) {
@@ -158,22 +81,24 @@ export class ContractTester {
         );
     }
 
-    async logger(...message: any[]) {
-      this.consoleMessages.push(...message);
-    }
-
     cleanTestName() {
       return `${this.groupName}${this.testName}`.replace(/[^a-z0-9]/gi, '');
     }
 
-    async test(group: string, name: string, test: Test, shouldApprove: boolean, message=null) {
+    async test(group: string, name: string, test: Test, shouldApprove = true, message?:string) {
         if (this.groupName == null || group == this.groupName) {
             if (this.testName == null || name == this.testName) {
               this.testCount++;
 
               // SETUP HELIOS MESSAGE DETECTION
               // ******************************
-              const cb = {...helios.DEFAULT_UPLC_RTE_CALLBACKS, onPrint: this.logger, consoleMessages: []};
+              const consoleMessages:string[] = [];
+              const cb = {
+                onPrint: async (msg: string) => {consoleMessages.push(msg)},
+                onStartCall: helios.DEFAULT_UPLC_RTE_CALLBACKS.onStartCall,
+                onEndCall: helios.DEFAULT_UPLC_RTE_CALLBACKS.onEndCall,
+                onIncrCost: helios.DEFAULT_UPLC_RTE_CALLBACKS.onIncrCost,
+              };
               const np = this.networkParams;
               const originalRun = test.script.run.bind(test.script);
               const newRun = async (args: any, callbacks: any, networkParams: any) => {
@@ -182,22 +107,24 @@ export class ContractTester {
               test.script.run = newRun;
               //*******************************
 
+              let tx = test.build();
               try {
-                const tx = await test.build().finalize(this.networkParams, helios.Address.fromBech32(arbitraryAddress));
-                //console.log(tx?.toCborHex())
+                tx = await tx.finalize(this.networkParams, helios.Address.fromBech32(this.changeAddress));
+                //console.log(JSON.stringify(tx?.dump()));
                 // SUCCESS
-                this.logTest(shouldApprove, group, name, cb.consoleMessages, message);
+                this.logTest(shouldApprove, group, name, consoleMessages, message);
               }
               catch (error: any) {
-                  this.logTest(shouldApprove, group, name, cb.consoleMessages, message, error);
+                //console.log(JSON.stringify(tx.dump()));
+                this.logTest(shouldApprove, group, name, consoleMessages, message, error);
               }
             }
         }
     }
     
-    logTest(shouldApprove: boolean, group: string, test: string, prints: string[], message=null, error?: any) {
+    logTest(shouldApprove: boolean, group: string, test: string, prints: string[], message?: string, error?: any) {
       const hasPrintStatements = prints.length > 1;
-      const assertion = (shouldApprove && !error) || (!shouldApprove && error && (!message || error.message.contains(message)));
+      const assertion: boolean = (shouldApprove && !error) || (!shouldApprove && error && (!message || error.message.includes(message)));
       const textColor = assertion ? Color.FgGreen : Color.FgRed
       
       if (!assertion || hasPrintStatements)
@@ -224,7 +151,7 @@ export class ContractTester {
           console.log(`   ${Color.FgRed}${prints[prints.length-1]}${Color.Reset}`);
         }
         else {
-          console.log(`   ${Color.FgRed}failure${Color.Reset}`);
+          console.log(`   ${Color.FgRed}${shouldApprove ? "tx denied" : "tx approved"}${Color.Reset}`);
         }
       }
       
