@@ -25,7 +25,7 @@ const runTests = async () => {
     await editingFixtures.initialize(mintingContract.mintingPolicyHash.hex, commonFixtures, commonFixtures.configCbor, helios.Address.fromHash(new helios.ValidatorHash(editingContract.validatorHash.hex)));
     
     const tester = new ContractTester(commonFixtures.walletAddress);
-    await tester.init("MINTING", "Multiple 444 mints w/ discount");
+    await tester.init();
     
     Promise.all([
         // Minting Contract - SHOULD APPROVE
