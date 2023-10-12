@@ -47,8 +47,7 @@ export class CommonFixtures extends Fixtures {
 
     async initialize() {
         this.walletAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase)).toPublicKey().hash()])).toBech32();
-        //this.paymentAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 1)).toPublicKey().hash()])).toBech32();
-        this.paymentAddress = 'addr_test1qz8y4szc8nlt0gdmxs60zzhussu65n2706kxumegyt89h80u26sj0a5ylekjhd8wmthe2fdxnu86pz6hjeveedh2ufwsq9puqn';
+        this.paymentAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 1)).toPublicKey().hash()])).toBech32();
         this.refTokenAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 2)).toPublicKey().hash()])).toBech32();
         this.feeAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 3)).toPublicKey().hash()])).toBech32();
         this.settings = [

@@ -25,7 +25,7 @@ const runTests = async () => {
     await editingFixtures.initialize(mintingContract.mintingPolicyHash.hex, commonFixtures, commonFixtures.configCbor, helios.Address.fromHash(new helios.ValidatorHash(editingContract.validatorHash.hex)));
     
     const tester = new ContractTester(commonFixtures.walletAddress);
-    await tester.init();
+    await tester.init("MINTING", "Multiple 444 mints w/ discount");
     
     Promise.all([
         // Minting Contract - SHOULD APPROVE
@@ -50,7 +50,7 @@ const runTests = async () => {
                 helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([['00000000000000000000000000000000000000000000000000000002', [[`74657374`, 2]]]]))
             ));
             mintingFixtures.outputs?.push(new helios.TxOutput(
-                helios.Address.fromBech32(commonFixtures.paymentAddress), new helios.Value(BigInt(74000000))
+                helios.Address.fromBech32(commonFixtures.paymentAddress), new helios.Value(BigInt(76000000))
             ));
             return mintingFixtures;
         })),
