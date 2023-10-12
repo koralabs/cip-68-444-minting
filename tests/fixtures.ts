@@ -78,7 +78,7 @@ export class CommonFixtures extends Fixtures {
             ]
         ];
         this.config = [
-            `0x${helios.Address.fromBech32(this.walletAddress).toHex()}`,
+            `0x${helios.Address.fromBech32(this.feeAddress).toHex()}`,
             [
                 [0, 0],
                 [10000000, 1000000],
@@ -201,7 +201,7 @@ export class MintingFixtures extends Fixtures {
             helios.Address.fromBech32(this.commonFixtures.paymentAddress), new helios.Value(BigInt(94000000))
         ),
         new helios.TxOutput(
-            helios.Address.fromBech32(this.commonFixtures.feeAddress), new helios.Value(BigInt(1000000))
+            helios.Address.fromBech32(this.commonFixtures.feeAddress), new helios.Value(BigInt(6000000))
         ),
         new helios.TxOutput(
             helios.Address.fromBech32(this.commonFixtures.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([[this.policyId, [[`${LBL_444}74657374`, 2],[`${LBL_444}7465737431`, 2],[`${LBL_444}7465737432`, 2]]]]))

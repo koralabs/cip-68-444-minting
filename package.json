@@ -6,7 +6,6 @@
     "scripts": {
         "test": "ts-node tests/tests.ts"
     },
-    "author": "et",
     "license": "unlicense",
     "dependencies": {
         "@hyperionbt/helios": "0.15.11",

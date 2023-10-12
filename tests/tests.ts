@@ -45,13 +45,16 @@ const runTests = async () => {
                 new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000001#4`),
                 new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([['00000000000000000000000000000000000000000000000000000002', [[`74657374`, 2]]]]))
             )));
-            mintingFixtures.outputs = mintingFixtures.outputs?.slice(1,3);
+            mintingFixtures.outputs = mintingFixtures.outputs?.slice(2,3);
             mintingFixtures.outputs?.push(new helios.TxOutput(
                 helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([['00000000000000000000000000000000000000000000000000000002', [[`74657374`, 2]]]]))
             ));
             mintingFixtures.outputs?.push(new helios.TxOutput(
                 helios.Address.fromBech32(commonFixtures.paymentAddress), new helios.Value(BigInt(76000000))
             ));
+            mintingFixtures.outputs?.push(new helios.TxOutput(
+                helios.Address.fromBech32(commonFixtures.feeAddress), new helios.Value(BigInt(4000000))
+            ))
             return mintingFixtures;
         })),
 
