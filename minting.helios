@@ -42,31 +42,34 @@ const LBL_222: ByteArray = #000de140 // (222)
 const LBL_100: ByteArray = #000643b0 // (100)
 const SETTINGS_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + (SETTINGS_HANDLE_NAME.encode_utf8()))
 const CONFIG_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + ("mint_config_444".encode_utf8()))
+const PUBKEYHASHBYTES: []ByteArray = []ByteArray{ #00, #01, #20, #21, #40, #41, #60, #61 }
+const STAKEKEYHASHBYTES: []ByteArray = []ByteArray{ #00, #01, #10, #11}
 
-func get_address_from_bytes(bytes: ByteArray) -> Address {
-    assert(bytes.length == 29 || bytes.length == 57, "Invalid address length");
-    credential: Credential = (if (bytes.slice(0,1) == #01 || bytes.slice(0,1) == #21 || bytes.slice(0,1) == #61) {
-            Credential::new_pubkey(PubKeyHash::new(bytes.slice(1, 29)))
+func address_equals_hex(output_address: Address, hex_address: ByteArray) -> Bool {
+    assert(hex_address.length == 29 || hex_address.length == 57, "Invalid address length");
+    first_byte: ByteArray = hex_address.slice(0,1);
+    credential: Credential = (if (PUBKEYHASHBYTES.any((h: ByteArray) -> {h == first_byte})) {
+            Credential::new_pubkey(PubKeyHash::new(hex_address.slice(1, 29)))
         }
         else {
-            Credential::new_validator(ValidatorHash::new(bytes.slice(1, 29)))
+            Credential::new_validator(ValidatorHash::new(hex_address.slice(1, 29)))
     });
-    staking: Option[StakingCredential] = (if(bytes.length == 57) {
-            if (bytes.slice(0,1) == #01 || bytes.slice(0,1) == #11) {
+    staking: Option[StakingCredential] = (if(hex_address.length == 57) {
+            if (STAKEKEYHASHBYTES.any((h: ByteArray) -> {h == first_byte})) {
                 Option[StakingCredential]::Some{ 
-                    StakingCredential::new_hash(StakingHash::new_stakekey(PubKeyHash::new(bytes.slice(29, 57)))) 
+                    StakingCredential::new_hash(StakingHash::new_stakekey(PubKeyHash::new(hex_address.slice(29, 57)))) 
                 }
             }
             else {
                 Option[StakingCredential]::Some{
-                    StakingCredential::new_hash(StakingHash::new_validator(StakingValidatorHash::new(bytes.slice(29, 57))))
+                    StakingCredential::new_hash(StakingHash::new_validator(StakingValidatorHash::new(hex_address.slice(29, 57))))
                 }
             }
         }
         else {
             Option[StakingCredential]::None
     });
-    Address::new(credential, staking)
+    output_address == Address::new(credential, staking)
 }
 
 func load_config(ctx: ScriptContext) -> MintConfig {
@@ -112,19 +115,16 @@ func get_mint_fee(payment: Int, config: MintConfig) -> Int {
 func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig, ctx: ScriptContext) -> MintCost {
     // Validate it is in assets list and starts with LBL_444
     assert(asset.starts_with(LBL_444), "Asset is not a (444) token");
-    mint_asset_opt: Option[MintAsset] = settings.assets.find_safe((a: MintAsset) -> {
-        a.name == asset
-    });
+    mint_asset_opt: Option[MintAsset] = settings.assets.find_safe((a: MintAsset) -> { a.name == asset });
     assert(mint_asset_opt != Option[MintAsset]::None, "Asset not found in policy");
     mint_asset:MintAsset = mint_asset_opt.unwrap();
     discounted_price: Int =
-        if (mint_asset.discount == Map[ByteArray]Map[Int]Int{}) { 
-            mint_asset.price }
+        if (mint_asset.discount == Map[ByteArray]Map[Int]Int{}) { mint_asset.price }
         else {
-            mint_asset.discount.fold[Int]((discounta: Int, policy: ByteArray, discount: Map[Int]Int) -> {
-                discount.sort((a: Int, _, b: Int, _) -> {a > b}).fold((discountb:Int, count: Int, price: Int) -> {
+            mint_asset.discount.fold[Int]((policy_discount: Int, policy: ByteArray, amounts: Map[Int]Int) -> {
+                amounts.sort((a: Int, _, b: Int, _) -> {a > b}).fold((amount_discount:Int, count: Int, price: Int) -> {
                     if (ctx.tx.outputs.any((output: TxOutput) -> {
-                        output.value.to_map().get_safe(MintingPolicyHash::new(policy.slice(0,28))).switch{
+                        output.value.get_assets().to_map().get_safe(MintingPolicyHash::new(policy.slice(0,28))).switch{
                             Some{assets} => {
                                 assets.any((a: ByteArray, total: Int) -> {
                                     if (policy.length > 28) { a.starts_with(policy.slice(28, policy.length)) && total >= count } 
@@ -132,8 +132,8 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig,
                             },
                             else => false}
                     })) { price }
-                    else {discountb}
-                }, discounta)
+                    else {amount_discount}
+                }, policy_discount)
             }, mint_asset.price)
     };
     fee: Int = get_mint_fee(discounted_price, config);
@@ -185,7 +185,7 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                             });
                             
                             // Assert that it is being sent to reference_token_address
-                            assert(token_output.address == get_address_from_bytes(settings.reference_token_address), "Reference Token not sent to reference_token_address");
+                            assert(address_equals_hex(token_output.address, settings.reference_token_address), "Reference Token not sent to reference_token_address");
 
                             // Assert there is only one
                             assert(minted_assets.get(key) == 1, "Only 1 Reference token can be minted with this asset name:" + key.show());
@@ -196,11 +196,11 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             }, MintCost {0, 0});
             // Total to payment_address contains sum of asset prices
             assert(total.payment <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
-                output.address == get_address_from_bytes(settings.payment_address)
+                address_equals_hex(output.address, settings.payment_address)
                 && output.value.contains(Value::lovelace(total.payment))}), "Policy minting payment is unpaid");
             // Total to fee_address contains sum of asset fees
             assert(total.fee <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
-                output.address == get_address_from_bytes(config.fee_address)
+                address_equals_hex(output.address, config.fee_address)
                 && output.value.contains(Value::lovelace(total.fee))}), "Minting fee is unpaid");
             
             true

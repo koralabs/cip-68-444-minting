@@ -3,7 +3,7 @@ import * as https from 'https'
 import { mnemonicToEntropy } from 'bip39';
 import bip32 from '@stricahq/bip32ed25519';
 
-helios.config.set({ IS_TESTNET: false });
+helios.config.set({ IS_TESTNET: true });
 
 export const handlesPolicy = helios.MintingPolicyHash.fromHex('f0ff48bbb7bbe9d59a40f1ce90e9e9d0ff5002ec48f232b49ca0fb9a');
 export const LBL_100 = '000643b0';
@@ -47,7 +47,8 @@ export class CommonFixtures extends Fixtures {
 
     async initialize() {
         this.walletAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase)).toPublicKey().hash()])).toBech32();
-        this.paymentAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 1)).toPublicKey().hash()])).toBech32();
+        //this.paymentAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 1)).toPublicKey().hash()])).toBech32();
+        this.paymentAddress = 'addr_test1qz8y4szc8nlt0gdmxs60zzhussu65n2706kxumegyt89h80u26sj0a5ylekjhd8wmthe2fdxnu86pz6hjeveedh2ufwsq9puqn';
         this.refTokenAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 2)).toPublicKey().hash()])).toBech32();
         this.feeAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 3)).toPublicKey().hash()])).toBech32();
         this.settings = [
@@ -198,7 +199,7 @@ export class MintingFixtures extends Fixtures {
         ))];
     
         this.outputs = [new helios.TxOutput(
-            helios.Address.fromBech32(this.commonFixtures.paymentAddress), new helios.Value(BigInt(100000000))
+            helios.Address.fromBech32(this.commonFixtures.paymentAddress), new helios.Value(BigInt(94000000))
         ),
         new helios.TxOutput(
             helios.Address.fromBech32(this.commonFixtures.feeAddress), new helios.Value(BigInt(1000000))
