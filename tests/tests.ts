@@ -1,14 +1,15 @@
 import fs from "fs";
 import * as helios from '@hyperionbt/helios'
 import { ContractTester, Test } from './contractTester.js'
-import { CommonFixtures, EditingFixtures, MintingFixtures } from "./fixtures.js";
-helios.config.set({ IS_TESTNET: false });
+import { CommonFixtures, EditingFixtures, LBL_100, LBL_444, MintingFixtures } from "./fixtures.js";
+helios.config.set({ IS_TESTNET: false, AUTO_SET_VALIDITY_RANGE: true });
 
 const runTests = async () => {
     let mintingFile = fs.readFileSync("./minting.helios").toString();
     const mintingProgram = helios.Program.new(mintingFile);
     mintingProgram.parameters.SETTINGS_HANDLE_NAME = "settings";
     const mintingContract = mintingProgram.compile();
+    const policyId = mintingContract.mintingPolicyHash.hex;
 
     let editingFile = fs.readFileSync("./editing.helios").toString();
     const editingProgram = helios.Program.new(editingFile);
@@ -21,8 +22,7 @@ const runTests = async () => {
     
     const mintingFixtures = new MintingFixtures(mintingContract.mintingPolicyHash.hex, commonFixtures, commonFixtures.configCbor);
 
-    const editingFixtures = new EditingFixtures();
-    await editingFixtures.initialize(mintingContract.mintingPolicyHash.hex, commonFixtures, commonFixtures.configCbor, helios.Address.fromHash(new helios.ValidatorHash(editingContract.validatorHash.hex)));
+    const editingFixtures = new EditingFixtures(mintingContract.mintingPolicyHash.hex, commonFixtures, commonFixtures.configCbor, helios.Address.fromHash(new helios.ValidatorHash(editingContract.validatorHash.hex)));
     
     const tester = new ContractTester(commonFixtures.walletAddress);
     await tester.init();
@@ -57,6 +57,19 @@ const runTests = async () => {
             ))
             return mintingFixtures;
         })),
+        tester.test("MINTING", "Burn approved", new Test(mintingProgram, () => {
+            mintingFixtures.initialize();
+            mintingFixtures.inputs?.push(new helios.TxInput(
+                new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000001#1`),
+                new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(10000000), new helios.Assets([[policyId, [[`${LBL_100}74657374`, BigInt(2)], [`${LBL_100}7465737431`, BigInt(2)]]]]))
+            )));
+            mintingFixtures.minted = [[`${LBL_100}74657374`, BigInt(-1)], [`${LBL_100}7465737431`, BigInt(-1)]];
+            mintingFixtures.outputs = [new helios.TxOutput(helios.Address.fromBech32(commonFixtures.refTokenAddress), 
+                    new helios.Value(BigInt(5000000), new helios.Assets([[policyId, [[`${LBL_100}74657374`, 1],[`${LBL_100}7465737431`, 1]]]]))
+            )];
+            mintingFixtures.redeemer = helios.UplcData.fromCbor('d87a9fff');
+            return mintingFixtures;
+        })),
 
         // Minting Contract - SHOULD DENY
         tester.test("MINTING", "Multiple 444 mints, low payment", new Test(mintingProgram, () => {
@@ -69,9 +82,31 @@ const runTests = async () => {
             ));
             return mintingFixtures;
         }), false, 'Policy minting payment is unpaid'),
+        tester.test("MINTING", "Burn too many", new Test(mintingProgram, () => {
+            mintingFixtures.initialize();
+            mintingFixtures.inputs?.push(new helios.TxInput(
+                new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000001#1`),
+                new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(10000000), new helios.Assets([[policyId, [[`${LBL_100}74657374`, BigInt(2)], [`${LBL_100}7465737431`, BigInt(2)]]]]))
+            )));
+            mintingFixtures.minted = [[`${LBL_100}74657374`, BigInt(-2)], [`${LBL_100}7465737431`, BigInt(-2)]];
+            mintingFixtures.outputs = undefined;
+            mintingFixtures.redeemer = helios.UplcData.fromCbor('d87a9fff');
+            return mintingFixtures;
+        }), false, 'There should be at least one reference token remaining'),
+        tester.test("MINTING", "Burn 444 token", new Test(mintingProgram, () => {
+            mintingFixtures.initialize();
+            mintingFixtures.inputs?.push(new helios.TxInput(
+                new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000001#1`),
+                new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(10000000), new helios.Assets([[policyId, [[`${LBL_100}74657374`, BigInt(2)], [`${LBL_444}7465737431`, BigInt(2)]]]]))
+            )));
+            mintingFixtures.minted = [[`${LBL_100}74657374`, BigInt(-1)], [`${LBL_444}7465737431`, BigInt(-1)]];
+            mintingFixtures.outputs = undefined;
+            mintingFixtures.redeemer = helios.UplcData.fromCbor('d87a9fff');
+            return mintingFixtures;
+        }), false, 'The BURN redeemer only allows reference tokens to be burnt'),
         
         // Editing Contract - SHOULD APPROVE
-        tester.test("EDITING", "happy path", new Test(editingProgram, () => editingFixtures)),
+        tester.test("EDITING", "happy path", new Test(editingProgram, editingFixtures.initialize)),
     ]
     ).then(() => {tester.displayStats()});
 }

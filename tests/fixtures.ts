@@ -129,38 +129,48 @@ export class CommonFixtures extends Fixtures {
 }
 
 export class EditingFixtures extends Fixtures {
+    policyId: string
+    commonFixtures: CommonFixtures
+    bgDatumCbor:string
+    scriptAddress: helios.Address
 
-    constructor() {
+    constructor(policyId: string, commonFixtures: CommonFixtures, bgDatumCbor:string, scriptAddress: helios.Address) {
         super();
+        this.policyId = policyId;
+        this.commonFixtures = commonFixtures;
+        this.bgDatumCbor = bgDatumCbor;
+        this.scriptAddress = scriptAddress;
     }
 
-    initialize = async (policyId: string, commonFixtures: CommonFixtures, bgDatumCbor:string, scriptAddress: helios.Address): Promise<void> =>
+    initialize = (): EditingFixtures =>
     {
         this.inputs = [new helios.TxInput(
             new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000001#0`),
-            new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(100000000))
+            new helios.TxOutput(helios.Address.fromBech32(this.commonFixtures.walletAddress), new helios.Value(BigInt(100000000))
         )),
         new helios.TxInput(
             new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000002#0`),
-            new helios.TxOutput(scriptAddress,
-            new helios.Value(BigInt(5000000), new helios.Assets([[policyId, [[`${LBL_100}74657374`, 1]]]])),
-            helios.Datum.inline(helios.UplcData.fromCbor(bgDatumCbor))
+            new helios.TxOutput(this.scriptAddress,
+            new helios.Value(BigInt(5000000), new helios.Assets([[this.policyId, [[`${LBL_100}74657374`, 1]]]])),
+            helios.Datum.inline(helios.UplcData.fromCbor(this.bgDatumCbor))
         ))];
     
         this.refInputs = [new helios.TxInput(
             new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000003#0`),
-            new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress),
+            new helios.TxOutput(helios.Address.fromBech32(this.commonFixtures.walletAddress),
             new helios.Value(BigInt(5000000), new helios.Assets([[handlesPolicy, [[settingsHandle, 1]]]])),
-            helios.Datum.inline(helios.UplcData.fromCbor(commonFixtures.settingsCbor))
+            helios.Datum.inline(helios.UplcData.fromCbor(this.commonFixtures.settingsCbor))
         ))];
     
         this.outputs = [new helios.TxOutput(
-            helios.Address.fromBech32(commonFixtures.refTokenAddress), new helios.Value(BigInt(5000000), new helios.Assets([[policyId, [[`${LBL_100}74657374`, 1]]]]))
+            helios.Address.fromBech32(this.commonFixtures.refTokenAddress), new helios.Value(BigInt(5000000), new helios.Assets([[this.policyId, [[`${LBL_100}74657374`, 1]]]]))
         )];
 
-        this.signatories = [helios.PubKeyHash.fromHex(helios.Address.fromBech32(commonFixtures.walletAddress).pubKeyHash?.hex ?? '')]
+        this.signatories = [helios.PubKeyHash.fromHex(helios.Address.fromBech32(this.commonFixtures.walletAddress).pubKeyHash?.hex ?? '')]
 
-        this.redeemer = helios.UplcData.fromCbor([...Buffer.from('d8799f48000643b074657374ff', 'hex')]);
+        this.redeemer = helios.UplcData.fromCbor('d8799f48000643b074657374ff');
+        
+        return this;
     }
         
 }
@@ -212,7 +222,10 @@ export class MintingFixtures extends Fixtures {
 
         this.signatories = [helios.PubKeyHash.fromHex(helios.Address.fromBech32(this.commonFixtures.walletAddress).pubKeyHash?.hex ?? '')]
 
+        this.redeemer = helios.UplcData.fromCbor('d8799fff');
+
         this.minted = [[`${LBL_444}74657374`, BigInt(2)], [`${LBL_444}7465737431`, BigInt(2)], [`${LBL_444}7465737432`, BigInt(2)], [`${LBL_100}74657374`, BigInt(1)], [`${LBL_100}7465737431`, BigInt(1)], [`${LBL_100}7465737432`, BigInt(1)]];
+        
         return this;
     }
         

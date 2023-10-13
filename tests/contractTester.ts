@@ -31,7 +31,7 @@ export class Test {
 
   build() {
     if (this.inputs)
-        this.inputs.forEach((input, index) => this.tx.addInput(input, index == (this.inputs?.length ?? 0) - 1 ? this.redeemer : undefined));
+        this.inputs.forEach((input, index) => this.tx.addInput(input, index == (this.inputs?.length ?? 0) - 1 && !this.minted ? this.redeemer : undefined));
 
     if (this.refInputs)
       this.refInputs.forEach((input) => this.tx.addRefInput(input));
@@ -39,7 +39,7 @@ export class Test {
     this.tx.attachScript(this.script)
     
     if (this.minted)
-      this.tx.mintTokens(this.script.mintingPolicyHash, this.minted, helios.UplcData.fromCbor('d8799fff'))
+      this.tx.mintTokens(this.script.mintingPolicyHash, this.minted, this.redeemer ?? null);
     
     if (this.outputs)
       this.outputs.forEach((output) => this.tx.addOutput(output));

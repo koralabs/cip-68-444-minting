@@ -209,7 +209,7 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             assert(minted_assets.all((asset_name: ByteArray, amount: Int) -> {asset_name.starts_with(LBL_100) && amount < 0}), "The BURN redeemer only allows reference tokens to be burnt");
             minted_assets.for_each((asset_name: ByteArray, amount: Int) -> {
                 total_input: Int = ctx.tx.inputs.fold[Int]((total: Int, input: TxInput) -> {
-                    found_asset: Option[Int] = input.output.value.get_policy(ctx.get_current_minting_policy_hash()).get_safe(asset_name);
+                    found_asset: Option[Int] = input.output.value.get_assets().to_map().get_safe(ctx.get_current_minting_policy_hash()).switch{Some{assets} => {assets.get_safe(asset_name)}, else => {Option[Int]::None}};
                     if (found_asset != Option[Int]::None) {
                         total + found_asset.unwrap()
                     }
