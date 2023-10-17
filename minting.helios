@@ -45,33 +45,6 @@ const CONFIG_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + ("min
 const PUBKEYHASHBYTES: []ByteArray = []ByteArray{ #00, #01, #20, #21, #40, #41, #60, #61 }
 const STAKEKEYHASHBYTES: []ByteArray = []ByteArray{ #00, #01, #10, #11}
 
-func address_equals_hex(output_address: Address, hex_address: ByteArray) -> Bool {
-    assert(hex_address.length == 29 || hex_address.length == 57, "Invalid address length");
-    first_byte: ByteArray = hex_address.slice(0,1);
-    credential: Credential = (if (PUBKEYHASHBYTES.any((h: ByteArray) -> {h == first_byte})) {
-            Credential::new_pubkey(PubKeyHash::new(hex_address.slice(1, 29)))
-        }
-        else {
-            Credential::new_validator(ValidatorHash::new(hex_address.slice(1, 29)))
-    });
-    staking: Option[StakingCredential] = (if(hex_address.length == 57) {
-            if (STAKEKEYHASHBYTES.any((h: ByteArray) -> {h == first_byte})) {
-                Option[StakingCredential]::Some{ 
-                    StakingCredential::new_hash(StakingHash::new_stakekey(PubKeyHash::new(hex_address.slice(29, 57)))) 
-                }
-            }
-            else {
-                Option[StakingCredential]::Some{
-                    StakingCredential::new_hash(StakingHash::new_validator(StakingValidatorHash::new(hex_address.slice(29, 57))))
-                }
-            }
-        }
-        else {
-            Option[StakingCredential]::None
-    });
-    output_address == Address::new(credential, staking)
-}
-
 func load_config(ctx: ScriptContext) -> MintConfig {
     config_input: Option[TxInput] = ctx.tx.ref_inputs.find_safe((input: TxInput) -> Bool { 
         input.output.value.get_safe(CONFIG_HANDLE) == 1
@@ -185,7 +158,7 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                             });
                             
                             // Assert that it is being sent to reference_token_address
-                            assert(address_equals_hex(token_output.address, settings.reference_token_address), "Reference Token not sent to reference_token_address");
+                            assert(token_output.address == Address::from_bytes(settings.reference_token_address), "Reference Token not sent to reference_token_address");
 
                             // Assert there is only one
                             assert(minted_assets.get(key) == 1, "Only 1 Reference token can be minted with this asset name:" + key.show());
@@ -196,11 +169,11 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             }, MintCost {0, 0});
             // Total to payment_address contains sum of asset prices
             assert(total.payment <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
-                address_equals_hex(output.address, settings.payment_address)
+                output.address == Address::from_bytes(settings.payment_address)
                 && output.value.contains(Value::lovelace(total.payment))}), "Policy minting payment is unpaid");
             // Total to fee_address contains sum of asset fees
             assert(total.fee <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
-                address_equals_hex(output.address, config.fee_address)
+                output.address == Address::from_bytes(config.fee_address)
                 && output.value.contains(Value::lovelace(total.fee))}), "Minting fee is unpaid");
             
             true
