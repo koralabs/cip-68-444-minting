@@ -114,7 +114,7 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig,
     if (mint_asset.valid_until > 0) {
         //print("start = " + ctx.tx.time_range.start.serialize().show() + ", expires = " + Time::new(mint_asset.valid_until).serialize().show() + ", end = " + ctx.tx.time_range.end.serialize().show());
         assert(ctx.tx.time_range.end - ctx.tx.time_range.start <= Duration::new(15 * 60 * 1000), "Invalid slot range for asset");
-        assert(ctx.tx.time_range.contains(Time::new(mint_asset.valid_until)), "This asset minting has expired");
+        assert(ctx.tx.time_range.end < Time::new(mint_asset.valid_until), "This asset minting has expired");
         mint_cost
     }
     else { mint_cost }

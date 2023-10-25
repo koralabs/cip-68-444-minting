@@ -3,7 +3,7 @@ import * as https from 'https'
 import { mnemonicToEntropy } from 'bip39';
 import bip32 from '@stricahq/bip32ed25519';
 
-helios.config.set({ IS_TESTNET: true });
+helios.config.set({ IS_TESTNET: false, AUTO_SET_VALIDITY_RANGE: true });
 
 export const handlesPolicy = helios.MintingPolicyHash.fromHex('f0ff48bbb7bbe9d59a40f1ce90e9e9d0ff5002ec48f232b49ca0fb9a');
 export const LBL_100 = '000643b0';

@@ -1,7 +1,7 @@
 import * as helios from '@hyperionbt/helios'
 import { Fixtures } from './fixtures.js'
 import { Color } from './colors.js';
-helios.config.set({ IS_TESTNET: false });
+helios.config.set({ IS_TESTNET: false, AUTO_SET_VALIDITY_RANGE: true });
 
 export class Test {
   tx: helios.Tx;
