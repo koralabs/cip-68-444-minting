@@ -42,8 +42,6 @@ const LBL_222: ByteArray = #000de140 // (222)
 const LBL_100: ByteArray = #000643b0 // (100)
 const SETTINGS_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + (SETTINGS_HANDLE_NAME.encode_utf8()))
 const CONFIG_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + ("mint_config_444".encode_utf8()))
-const PUBKEYHASHBYTES: []ByteArray = []ByteArray{ #00, #01, #20, #21, #40, #41, #60, #61 }
-const STAKEKEYHASHBYTES: []ByteArray = []ByteArray{ #00, #01, #10, #11}
 
 func load_config(ctx: ScriptContext) -> MintConfig {
     config_input: Option[TxInput] = ctx.tx.ref_inputs.find_safe((input: TxInput) -> Bool { 
@@ -114,7 +112,7 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig,
     if (mint_asset.valid_until > 0) {
         //print("start = " + ctx.tx.time_range.start.serialize().show() + ", expires = " + Time::new(mint_asset.valid_until).serialize().show() + ", end = " + ctx.tx.time_range.end.serialize().show());
         assert(ctx.tx.time_range.end - ctx.tx.time_range.start <= Duration::new(15 * 60 * 1000), "Invalid slot range for asset");
-        assert(ctx.tx.time_range.end < Time::new(mint_asset.valid_until), "This asset minting has expired");
+        assert(ctx.tx.time_range.start < Time::new(mint_asset.valid_until), "This asset minting has expired");
         mint_cost
     }
     else { mint_cost }

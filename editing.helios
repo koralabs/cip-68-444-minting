@@ -38,8 +38,6 @@ const LBL_444: ByteArray = #001bc280 // (444)
 const LBL_222: ByteArray = #000de140 // (222)
 const LBL_100: ByteArray = #000643b0 // (100)
 const SETTINGS_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + (SETTINGS_HANDLE_NAME.encode_utf8()))
-const PUBKEYHASHBYTES: []ByteArray = []ByteArray{ #00, #01, #20, #21, #40, #41, #60, #61 }
-const STAKEKEYHASHBYTES: []ByteArray = []ByteArray{ #00, #01, #10, #11}
 
 func load_settings(ctx: ScriptContext) -> (MintSettings, Bool) {
     settings_input_ref: Option[TxInput] = ctx.tx.ref_inputs.find_safe((input: TxInput) -> Bool { 
