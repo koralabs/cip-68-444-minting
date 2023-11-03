@@ -162,7 +162,12 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                             assert(minted_assets.get(key) == 1, "Only 1 Reference token can be minted with this asset name:" + key.show());
                             costs
                         }
-                    else { error("Invalid asset_name_label for this policy. Must be (100) or (444)") }
+                    else { 
+                        if(key == #20) {
+                            assert(signed_by_owner, "Missing policy owner signature");
+                            true
+                        }
+                        else {error("Invalid asset_name_label for this policy. Must be (100) or (444)") } }
                 }
             }, MintCost {0, 0});
             // Total to payment_address contains sum of asset prices
