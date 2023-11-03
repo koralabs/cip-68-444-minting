@@ -136,7 +136,7 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                     MintCost {costs.payment + (if (signed_by_owner) { 0 } else { minted_cost.payment }) * value, costs.fee + minted_cost.fee * value }
                 }
                 else
-                    {   
+                    {
                         if (key.starts_with(LBL_100)) { //MINT_REFERENCE_TOKEN
                             // This can only happen once per asset_name
                             // It consumes the UTxO in the settings
@@ -163,9 +163,10 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                             costs
                         }
                     else { 
-                        if(key == #20) {
+                        if (key == #20) {
                             assert(signed_by_owner, "Missing policy owner signature");
-                            true
+                            assert(settings.assets.length == 0, "There can be no Assets listed for a royalties mint");
+                            costs
                         }
                         else {error("Invalid asset_name_label for this policy. Must be (100) or (444)") } }
                 }
