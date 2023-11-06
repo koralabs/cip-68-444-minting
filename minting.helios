@@ -163,7 +163,7 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                             costs
                         }
                     else { 
-                        if (key == #20) {
+                        if (key == #) {
                             assert(signed_by_owner, "Missing policy owner signature");
                             assert(settings.assets.length == 0, "There can be no Assets listed for a royalties mint");
                             costs
