@@ -92,45 +92,49 @@ export class ContractTester {
 
               // SETUP HELIOS MESSAGE DETECTION
               // ******************************
-              const consoleMessages:string[] = [];
-              const cb = {
-                onPrint: async (msg: string) => {consoleMessages.push(msg)},
-                onStartCall: helios.DEFAULT_UPLC_RTE_CALLBACKS.onStartCall,
-                onEndCall: helios.DEFAULT_UPLC_RTE_CALLBACKS.onEndCall,
-                onIncrCost: helios.DEFAULT_UPLC_RTE_CALLBACKS.onIncrCost,
-              };
-              const np = this.networkParams;
-              const originalRun = test.script.run.bind(test.script);
-              const newRun = async (args: any, callbacks: any, networkParams: any) => {
-                return originalRun(args, cb, np);
-              }
-              test.script.run = newRun;
+              // const consoleMessages:string[] = [];
+              // const cb = {
+              //   onPrint: async (msg: string) => {consoleMessages.push(msg)},
+              //   onStartCall: helios.DEFAULT_UPLC_RTE_CALLBACKS.onStartCall,
+              //   onEndCall: helios.DEFAULT_UPLC_RTE_CALLBACKS.onEndCall,
+              //   onIncrCost: helios.DEFAULT_UPLC_RTE_CALLBACKS.onIncrCost,
+              // };
+              // const np = this.networkParams;
+              // const originalRun = test.script.run.bind(test.script);
+              // const newRun = async (args: any, callbacks: any, networkParams: any) => {
+              //   return originalRun(args, cb, np);
+              // }
+              // test.script.run = newRun;
               //*******************************
 
               let tx = test.build();
               try {
-                tx = await tx.finalize(this.networkParams, helios.Address.fromBech32(this.changeAddress));
+                await tx.finalize(this.networkParams, helios.Address.fromBech32(this.changeAddress));
                 //console.log(JSON.stringify(tx?.dump()));
                 // SUCCESS
-                this.logTest(shouldApprove, group, name, consoleMessages, message);
+                this.logTest(tx, shouldApprove, group, name, message);
               }
               catch (error: any) {
                 //console.log(JSON.stringify(tx.dump()));
-                this.logTest(shouldApprove, group, name, consoleMessages, message, error);
+                this.logTest(tx, shouldApprove, group, name, message, error);
               }
             }
         }
     }
     
-    logTest(shouldApprove: boolean, group: string, test: string, prints: string[], message?: string, error?: any) {
-      const hasPrintStatements = prints.length > 1;
+    logTest(tx: helios.Tx, shouldApprove: boolean, group: string, test: string, message?: string, error?: any) {
+      
+      const prints = (error?.message.split(/\r|\n/ig) ?? []).filter((m: string) => m.startsWith('INFO'));
+      const hasPrintStatements = prints.length > 0;
       const assertion: boolean = (shouldApprove && !error) || (!shouldApprove && error && (!message || error.message.includes(message)));
       const textColor = assertion ? Color.FgGreen : Color.FgRed
       
       if (!assertion || hasPrintStatements)
         console.log(`${textColor}------------------------------${Color.Reset}`)
       
-      console.log(`${textColor}*${assertion ? "success" : "failure"}* - ${(shouldApprove ? "APPROVE" : "DENY").padEnd(7)} - ${group.padEnd(25)} '${test}'${Color.Reset}`);
+      const mem = `mem:${tx.witnesses.redeemers.reduce((n, r) => {return n + r.memCost}, BigInt(0))}`;
+      const cpu = `cpu:${tx.witnesses.redeemers.reduce((n, r) => {return n + r.cpuCost}, BigInt(0))}`;
+      console.log(`${textColor}*${assertion ? "success" : "failure"}* - ${(shouldApprove ? "APPROVE" : "DENY").padEnd(7)} - ${group.padEnd(25)} '${test}'${Color.Reset} ( ${mem} ${cpu} )`);
       
       if (hasPrintStatements)
         console.log(`   ${Color.FgYellow}PRINT STATEMENTS:${Color.Reset}\n   ${prints.join("\n   ")}`);
@@ -141,7 +145,7 @@ export class ContractTester {
       else {
         this.failCount++
         console.log(`   ${Color.FgYellow}ERROR:${Color.Reset}`);
-        if (error)
+        if (error && !hasPrintStatements)
           console.log(error);
         console.log(`\n`)
         console.log(`   ${Color.FgYellow}EXPECTED:\n   ${Color.FgBlue}${message ? message : "success"}${Color.Reset}`);
