@@ -21,6 +21,11 @@ export const getKeyFromSeedPhrase = async (seed: string[], derivation = 0): Prom
 
 export const testSeedPhrase = ['hurdle', 'exile', 'essence', 'fitness', 'winter', 'unaware', 'coil', 'polar', 'vocal', 'like', 'tuition', 'story', 'consider', 'weasel', 'shove', 'donkey', 'effort', 'nice', 'any', 'buffalo', 'trip', 'amount', 'hundred', 'duty'];
 
+export const walletAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase)).toPublicKey().hash()])).toBech32();
+export const paymentAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase,1 )).toPublicKey().hash()])).toBech32();
+export const refTokenAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 2)).toPublicKey().hash()])).toBech32();
+export const feeAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 3)).toPublicKey().hash()])).toBech32();
+
 export class Fixtures {
     inputs?: helios.TxInput[];
     refInputs?: helios.TxInput[];
@@ -45,47 +50,58 @@ export class CommonFixtures extends Fixtures {
         super();
     }
 
-    async initialize() {
-        this.walletAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase)).toPublicKey().hash()])).toBech32();
-        this.paymentAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 1)).toPublicKey().hash()])).toBech32();
-        this.refTokenAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 2)).toPublicKey().hash()])).toBech32();
-        this.feeAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 3)).toPublicKey().hash()])).toBech32();
-        this.settings = [
-            `0x${helios.Address.fromBech32(this.paymentAddress).toHex()}`,
-            `0x${helios.Address.fromBech32(this.refTokenAddress).toHex()}`,
-            [
+    async initialize(settings?: any[], config?: any[]) {
+        this.walletAddress = walletAddress;
+        this.paymentAddress = paymentAddress;
+        this.refTokenAddress = refTokenAddress;
+        this.feeAddress = feeAddress;
+        if (settings) {
+            this.settings = settings;
+        }
+        else {
+            this.settings = [
+                `0x${helios.Address.fromBech32(this.paymentAddress).toHex()}`,
+                `0x${helios.Address.fromBech32(this.refTokenAddress).toHex()}`,
                 [
-                    `0x${LBL_444}74657374`, //test
-                    ["0x0000000000000000000000000000000000000000000000000000000000000001", 0],
-                    0,
-                    0,
-                    {}
-                ],
-                [
-                    `0x${LBL_444}7465737431`, //test1
-                    ["0x0000000000000000000000000000000000000000000000000000000000000001", 0],
-                    10000000,
-                    0,
-                    {}
-                ],
-                [
-                    `0x${LBL_444}7465737432`, //test2
-                    ["0x0000000000000000000000000000000000000000000000000000000000000001", 0],
-                    40000000,
-                    Date.now(),
-                    {'0x0000000000000000000000000000000000000000000000000000000274657374': {2: 30000000}}
+                    [
+                        `0x${LBL_444}74657374`, //test
+                        ["0x0000000000000000000000000000000000000000000000000000000000000001", 0],
+                        0,
+                        0,
+                        {}
+                    ],
+                    [
+                        `0x${LBL_444}7465737431`, //test1
+                        ["0x0000000000000000000000000000000000000000000000000000000000000001", 0],
+                        10000000,
+                        0,
+                        {}
+                    ],
+                    [
+                        `0x${LBL_444}7465737432`, //test2
+                        ["0x0000000000000000000000000000000000000000000000000000000000000001", 0],
+                        40000000,
+                        Date.now(),
+                        {'0x0000000000000000000000000000000000000000000000000000000274657374': {2: 30000000}}
+                    ]
                 ]
-            ]
-        ];
-        this.config = [
-            `0x${helios.Address.fromBech32(this.feeAddress).toHex()}`,
-            [
-                [0, 0],
-                [10000000, 1000000],
-                [40000000, 2000000],
-                [80000000, 3000000]
-            ]
-        ];
+            ];
+        }
+        if (config) {
+            this.config = config;
+        }
+        else {
+            this.config = [
+                `0x${helios.Address.fromBech32(this.feeAddress).toHex()}`,
+                [
+                    [0, 0],
+                    [10000000, 1000000],
+                    [40000000, 2000000],
+                    [80000000, 3000000]
+                ]
+            ];
+
+        }
         this.settingsCbor = await this.convertJsontoCbor(this.settings);
         // Need to hard code it until we fix numeric object keys in the API
         // this.settingsCbor = '83581D61B32D73A127613965D793AD6F7455A9373FB17AE604A24378F4ABA455581D61B32D73A127613965D793AD6F7455A9373FB17AE604A24378F4ABA455838548001BC280746573748258200000000000000000000000000000000000000000000000000000000000000001000000A08549001BC28074657374318258200000000000000000000000000000000000000000000000000000000000000001001A0098968000A08549001BC28074657374328258200000000000000000000000000000000000000000000000000000000000000001001A02625A001b0000018b03a25460A15824000000000000000000000000000000000000000000000000000000000000000274657374A102181E';

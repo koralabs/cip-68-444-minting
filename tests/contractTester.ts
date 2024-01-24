@@ -13,8 +13,8 @@ export class Test {
   minted?: [helios.ByteArray | helios.ByteArrayProps, helios.HInt | helios.HIntProps][];
   redeemer?: helios.UplcData;
   
-  constructor (script: helios.Program, fixtures: () => Fixtures, setupTx?: () => helios.Tx) {
-    this.script = script.compile(); // We have to compile again for each test due to shared console logging.
+  constructor (script: helios.Program, fixtures: () => Fixtures, setupTx?: () => helios.Tx, optimizedCompile = false) {
+    this.script = script.compile(optimizedCompile); // We have to compile again for each test due to shared console logging.
     this.tx = setupTx ? setupTx() : new helios.Tx();   
     if (fixtures){
       const fixture = fixtures();
@@ -134,7 +134,8 @@ export class ContractTester {
       
       const mem = `mem:${tx.witnesses.redeemers.reduce((n, r) => {return n + r.memCost}, BigInt(0))}`;
       const cpu = `cpu:${tx.witnesses.redeemers.reduce((n, r) => {return n + r.cpuCost}, BigInt(0))}`;
-      console.log(`${textColor}*${assertion ? "success" : "failure"}* - ${(shouldApprove ? "APPROVE" : "DENY").padEnd(7)} - ${group.padEnd(25)} '${test}'${Color.Reset} ( ${mem} ${cpu} )`);
+      const size = `size:${tx.body.toCborHex().length / 2}`;
+      console.log(`${textColor}*${assertion ? "success" : "failure"}* - ${(shouldApprove ? "APPROVE" : "DENY").padEnd(7)} - ${group.padEnd(25)} '${test}'${Color.Reset} ( ${mem}, ${cpu}, ${size} )`);
       
       if (hasPrintStatements)
         console.log(`   ${Color.FgYellow}PRINT STATEMENTS:${Color.Reset}\n   ${prints.join("\n   ")}`);

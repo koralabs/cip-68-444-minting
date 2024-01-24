@@ -124,10 +124,6 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
     redeemer.switch {
         MINT => {
             //print("settings = " + settings.serialize().show());
-            // Validate the assets have unique names
-            settings.assets.for_each((asset: MintAsset) -> {
-                assert(settings.assets.filter((a: MintAsset) -> { a == asset }).length <= 1, "Duplicate asset found: " + asset.name.show())
-            });
             config: MintConfig = (if (minted_assets.any((asset_name: ByteArray, _) -> {asset_name.starts_with(LBL_444)})) {load_config(ctx)} else {MintConfig{#, [][]Int{}}});
 
             total: MintCost = minted_assets.fold[MintCost]((costs:MintCost, key: ByteArray, value: Int) -> {
@@ -137,6 +133,8 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
                 }
                 else
                     {
+                        // Validate the assets have unique names
+                        assert(settings.assets.filter((a: MintAsset) -> { a.name == key }).length <= 1, "Duplicate asset found: " + minted_assets.head_key.show());
                         if (key.starts_with(LBL_100)) { //MINT_REFERENCE_TOKEN
                             // This can only happen once per asset_name
                             // It consumes the UTxO in the settings
