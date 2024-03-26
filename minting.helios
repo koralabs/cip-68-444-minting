@@ -20,7 +20,7 @@ struct MintAsset {
     utxo: Utxo
     price: Int
     valid_until: Int
-    discount: Map[ByteArray]Map[Int]Int
+    discount: Map[ByteArray][]Int
 }
 
 struct MintSettings {
@@ -89,28 +89,35 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig,
     mint_asset_opt: Option[MintAsset] = settings.assets.find_safe((a: MintAsset) -> { a.name == asset });
     assert(mint_asset_opt != Option[MintAsset]::None, "Asset not found in policy");
     mint_asset:MintAsset = mint_asset_opt.unwrap();
-    discounted_price: Int =
-        if (mint_asset.discount == Map[ByteArray]Map[Int]Int{}) { mint_asset.price }
+    discounted_price: Int = if (mint_asset.discount == Map[ByteArray][]Int{}) { mint_asset.price }
         else {
-            mint_asset.discount.fold[Int]((policy_discount: Int, policy: ByteArray, amounts: Map[Int]Int) -> {
-                amounts.sort((a: Int, _, b: Int, _) -> {a > b}).fold((amount_discount:Int, count: Int, price: Int) -> {
-                    if (ctx.tx.outputs.any((output: TxOutput) -> {
-                        output.value.get_assets().to_map().get_safe(MintingPolicyHash::new(policy.slice(0,28))).switch{
-                            Some{assets} => {
-                                assets.any((a: ByteArray, total: Int) -> {
-                                    if (policy.length > 28) { a.starts_with(policy.slice(28, policy.length)) && total >= count } 
-                                    else { total >= count }})
-                            },
-                            else => false}
-                    })) { price }
-                    else {amount_discount}
-                }, policy_discount)
+            sorted_map: Map[ByteArray][]Int = mint_asset.discount.sort((_, a: []Int, _, b: []Int) -> Bool {a.get(1) <= b.get(1)});
+            sorted_map.fold_lazy[Int]((policy: ByteArray, discount: []Int, next: () -> Int) -> Int {
+                if (ctx.tx.outputs.fold_lazy[Int]((output: TxOutput, next: () -> Int ) -> Int {
+                            mph: MintingPolicyHash = MintingPolicyHash::new(policy.slice(0,28));
+                            total: Int = output.value.get_assets().to_map().get_safe(mph).switch{
+                                    Some{assets} => {
+                                        assets.fold_lazy[Int]((asset: ByteArray, count: Int, next: () -> Int) -> Int {
+                                            if (policy.length > 28 || asset.starts_with(policy.slice(28, policy.length))) {
+                                                count + next()
+                                            } else {next()}
+                                        }, 0)
+                                    },
+                                    else => 0
+                                };
+                            if (total >= discount.get(0)) {
+                                total
+                            }
+                            else {total + next()}
+                        }, 0) >= discount.get(0)) {
+                    discount.get(1)
+                }
+                else {next()}
             }, mint_asset.price)
     };
     fee: Int = get_mint_fee(discounted_price, config);
     mint_cost:MintCost = MintCost { discounted_price - fee, fee };
     if (mint_asset.valid_until > 0) {
-        //print("start = " + ctx.tx.time_range.start.serialize().show() + ", expires = " + Time::new(mint_asset.valid_until).serialize().show() + ", end = " + ctx.tx.time_range.end.serialize().show());
         assert(ctx.tx.time_range.end - ctx.tx.time_range.start <= Duration::new(15 * 60 * 1000), "Invalid slot range for asset");
         assert(ctx.tx.time_range.start < Time::new(mint_asset.valid_until), "This asset minting has expired");
         mint_cost
@@ -123,7 +130,6 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
     minted_assets: Map[ByteArray]Int = ctx.tx.minted.get_policy(ctx.get_current_minting_policy_hash());
     redeemer.switch {
         MINT => {
-            //print("settings = " + settings.serialize().show());
             config: MintConfig = (if (minted_assets.any((asset_name: ByteArray, _) -> {asset_name.starts_with(LBL_444)})) {load_config(ctx)} else {MintConfig{#, [][]Int{}}});
 
             total: MintCost = minted_assets.fold[MintCost]((costs:MintCost, key: ByteArray, value: Int) -> {
@@ -172,7 +178,7 @@ func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
             // Total to payment_address contains sum of asset prices
             assert(total.payment <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
                 output.address == Address::from_bytes(settings.payment_address)
-                && output.value.contains(Value::lovelace(total.payment))}), "Policy minting payment is unpaid");
+                && output.value.contains(Value::lovelace(total.payment))}), "Policy minting payment is unpaid: ₳" + (total.payment / 1000000).show());
             // Total to fee_address contains sum of asset fees
             assert(total.fee <= 0 || ctx.tx.outputs.any((output: TxOutput) -> {
                 output.address == Address::from_bytes(config.fee_address)

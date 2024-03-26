@@ -84,6 +84,26 @@ const runTests = async () => {
             ))
             return mintingFixtures;
         })),
+        tester.test("MINTING", "Multiple 444 mints w/ different discount", new Test(mintingProgram, () => {
+            mintingFixtures.initialize();
+            mintingFixtures.signatories = [];
+            mintingFixtures.minted = mintingFixtures.minted?.slice(0,3);
+            mintingFixtures.inputs?.push(new helios.TxInput(
+                new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000001#4`),
+                new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([['00000000000000000000000000000000000000000000000000000002', [[`74657374`, 2],[`7465737431`, 2],[`7465737433`, 2]]]]))
+            )));
+            mintingFixtures.outputs = mintingFixtures.outputs?.slice(2,3);
+            mintingFixtures.outputs?.push(new helios.TxOutput(
+                helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([['00000000000000000000000000000000000000000000000000000002', [[`74657374`, 2],[`7465737431`, 2],[`7465737433`, 2]]]]))
+            ));
+            mintingFixtures.outputs?.push(new helios.TxOutput(
+                helios.Address.fromBech32(commonFixtures.paymentAddress), new helios.Value(BigInt(20000000))
+            ));
+            mintingFixtures.outputs?.push(new helios.TxOutput(
+                helios.Address.fromBech32(commonFixtures.feeAddress), new helios.Value(BigInt(2000000))
+            ))
+            return mintingFixtures;
+        })),
         tester.test("MINTING", "Burn approved", new Test(mintingProgram, () => {
             mintingFixtures.initialize();
             mintingFixtures.inputs?.push(new helios.TxInput(
