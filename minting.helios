@@ -20,7 +20,7 @@ struct MintAsset {
     utxo: Utxo
     price: Int
     valid_until: Int
-    discount: Map[ByteArray][]Int
+    discount: [][]Data
 }
 
 struct MintSettings {
@@ -89,9 +89,15 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig,
     mint_asset_opt: Option[MintAsset] = settings.assets.find_safe((a: MintAsset) -> { a.name == asset });
     assert(mint_asset_opt != Option[MintAsset]::None, "Asset not found in policy");
     mint_asset:MintAsset = mint_asset_opt.unwrap();
-    discounted_price: Int = if (mint_asset.discount == Map[ByteArray][]Int{}) { mint_asset.price }
+    discounted_price: Int = if (mint_asset.discount == [][]Data{}) { mint_asset.price }
         else {
-            sorted_map: Map[ByteArray][]Int = mint_asset.discount.sort((_, a: []Int, _, b: []Int) -> Bool {a.get(1) <= b.get(1)});
+            //[[#1234, [[1, 10], [2, 5]], [#1234, [[3, 2], [4, 0]]] 
+            discounts: Map[ByteArray][]Int = mint_asset.discount.fold[Map[ByteArray][]Int]((acc: Map[ByteArray][]Int, policy: []Data) -> {
+                [][]Int::from_data(policy.get(1)).fold[Map[ByteArray][]Int]((dis_acc: Map[ByteArray][]Int, discount: []Int) -> {
+                    dis_acc.prepend(ByteArray::from_data(policy.get(0)), discount)
+                }, acc)
+            }, Map[ByteArray][]Int{});
+            sorted_map: Map[ByteArray][]Int = discounts.sort((_, a: []Int, _, b: []Int) -> Bool {a.get(1) <= b.get(1)});
             sorted_map.fold_lazy[Int]((policy: ByteArray, discount: []Int, next: () -> Int) -> Int {
                 if (ctx.tx.outputs.fold_lazy[Int]((output: TxOutput, next: () -> Int ) -> Int {
                             mph: MintingPolicyHash = MintingPolicyHash::new(policy.slice(0,28));
