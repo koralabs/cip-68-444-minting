@@ -202,7 +202,7 @@ export class MintingFixtures extends Fixtures {
     constructor(policyId: string, commonFixtures: CommonFixtures, configCbor:string) {
         super();
         this.policyId = policyId;
-        this.commonFixtures = commonFixtures;
+                this.commonFixtures = commonFixtures;
         this.configCbor = configCbor;
     }
 
@@ -213,30 +213,24 @@ export class MintingFixtures extends Fixtures {
             new helios.TxOutput(helios.Address.fromBech32(this.commonFixtures.walletAddress), new helios.Value(BigInt(200000000))
         ))];
         this.refInputs = [new helios.TxInput(
-            new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000002#0`),
-            new helios.TxOutput(helios.Address.fromBech32(this.commonFixtures.walletAddress),
-            new helios.Value(BigInt(5000000), new helios.Assets([[handlesPolicy, [[configHandle, 1]]]])),
-            helios.Datum.inline(helios.UplcData.fromCbor(this.configCbor))
-        )),  
-        new helios.TxInput(
-            new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000003#0`),
-            new helios.TxOutput(helios.Address.fromBech32(this.commonFixtures.walletAddress),
-            new helios.Value(BigInt(5000000), new helios.Assets([[handlesPolicy, [[settingsHandle, 1]]]])),
-            helios.Datum.inline(helios.UplcData.fromCbor(this.commonFixtures.settingsCbor))
-        ))];
+                new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000002#0`),
+                new helios.TxOutput(helios.Address.fromBech32(this.commonFixtures.walletAddress),
+                new helios.Value(BigInt(5000000), new helios.Assets([[handlesPolicy, [[configHandle, 1]]]])),
+                helios.Datum.inline(helios.UplcData.fromCbor(this.configCbor))
+            )),  
+            new helios.TxInput(
+                new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000003#0`),
+                new helios.TxOutput(helios.Address.fromBech32(this.commonFixtures.walletAddress),
+                new helios.Value(BigInt(5000000), new helios.Assets([[handlesPolicy, [[settingsHandle, 1]]]])),
+                helios.Datum.inline(helios.UplcData.fromCbor(this.commonFixtures.settingsCbor))
+            ))
+        ];
     
-        this.outputs = [new helios.TxOutput(
-            helios.Address.fromBech32(this.commonFixtures.paymentAddress), new helios.Value(BigInt(94000000))
-        ),
-        new helios.TxOutput(
-            helios.Address.fromBech32(this.commonFixtures.feeAddress), new helios.Value(BigInt(6000000))
-        ),
-        new helios.TxOutput(
-            helios.Address.fromBech32(this.commonFixtures.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([[this.policyId, [[`${LBL_444}74657374`, 2],[`${LBL_444}7465737431`, 2],[`${LBL_444}7465737432`, 2]]]]))
-        ),
-        new helios.TxOutput(
-            helios.Address.fromBech32(this.commonFixtures.refTokenAddress), new helios.Value(BigInt(5000000), new helios.Assets([[this.policyId, [[`${LBL_100}74657374`, 1],[`${LBL_100}7465737431`, 1],[`${LBL_100}7465737432`, 1]]]]))
-        )];
+        this.outputs = [new helios.TxOutput(helios.Address.fromBech32(this.commonFixtures.paymentAddress), new helios.Value(BigInt(94000000))),
+            new helios.TxOutput(helios.Address.fromBech32(this.commonFixtures.feeAddress), new helios.Value(BigInt(6000000))),
+            new helios.TxOutput(helios.Address.fromBech32(this.commonFixtures.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([[this.policyId, [[`${LBL_444}74657374`, 2],[`${LBL_444}7465737431`, 2],[`${LBL_444}7465737432`, 2]]]]))),
+            new helios.TxOutput(helios.Address.fromBech32(this.commonFixtures.refTokenAddress), new helios.Value(BigInt(5000000), new helios.Assets([[this.policyId, [[`${LBL_100}74657374`, 1],[`${LBL_100}7465737431`, 1],[`${LBL_100}7465737432`, 1]]]])))
+        ];
 
         this.signatories = [helios.PubKeyHash.fromHex(helios.Address.fromBech32(this.commonFixtures.walletAddress).pubKeyHash?.hex ?? '')]
 

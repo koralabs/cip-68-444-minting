@@ -30,7 +30,7 @@ const runTests = async () => {
     const pad0 = 4; // 4 or 56
     const maxAsset = maxAssets.toString().padStart(pad0, '0'); // 4 or 56
     for (let i=1; i <= maxAssets; i++) {
-        settingsMax[2].push([`0x${LBL_444}${i.toString().padStart(pad0,'0')}`, ["0x0000000000000000000000000000000000000000000000000000000000000001", 0], 0, 0, {} ])
+        settingsMax[2].push([`0x${LBL_444}${i.toString().padStart(pad0,'0')}`, ["0x0000000000000000000000000000000000000000000000000000000000000001", 0], 0, 0, [] ])
     }
     await commonFixtureMax.initialize(settingsMax);
     console.log(`CBOR size of settings with ${maxAssets} assets is ${commonFixtureMax.settingsCbor.length / 2}`)
@@ -56,10 +56,10 @@ const runTests = async () => {
             const mintingMax = new MintingFixtures(mintingProgram.compile(true).mintingPolicyHash.hex, commonFixtureMax, commonFixtureMax.configCbor);
             mintingMax.initialize();
             mintingMax.outputs = mintingMax.outputs?.slice(0,2).concat([new helios.TxOutput(
-                helios.Address.fromBech32(commonFixtureMax.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([[mintingMax.policyId, [[`${LBL_444}${maxAsset}`, 1]]]]))
+                helios.Address.fromBech32(commonFixtureMax.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([[mintingMax.policyId, [[`${LBL_444}${maxAsset}`, BigInt(1)]]]]))
             ),
             new helios.TxOutput(
-                helios.Address.fromBech32(commonFixtureMax.refTokenAddress), new helios.Value(BigInt(5000000), new helios.Assets([[mintingMax.policyId, [[`${LBL_100}${maxAsset}`, 1]]]]))
+                helios.Address.fromBech32(commonFixtureMax.refTokenAddress), new helios.Value(BigInt(5000000), new helios.Assets([[mintingMax.policyId, [[`${LBL_100}${maxAsset}`, BigInt(1)]]]]))
             )]);
             mintingMax.minted = [[`${LBL_444}${maxAsset}`, BigInt(1)], [`${LBL_100}${maxAsset}`, BigInt(1)]];
             return mintingMax;
