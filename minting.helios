@@ -91,11 +91,9 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig,
     mint_asset:MintAsset = mint_asset_opt.unwrap();
     discounted_price: Int = if (mint_asset.discount == [][]Data{}) { mint_asset.price }
         else {
-            //[[#1234, [[1, 10], [2, 5]], [#1234, [[3, 2], [4, 0]]] 
+            //[ [#1234, [1, 10]], [#1234, [3, 2]], [#12345, [1, 5]] ]
             discounts: Map[ByteArray][]Int = mint_asset.discount.fold[Map[ByteArray][]Int]((acc: Map[ByteArray][]Int, policy: []Data) -> {
-                [][]Int::from_data(policy.get(1)).fold[Map[ByteArray][]Int]((dis_acc: Map[ByteArray][]Int, discount: []Int) -> {
-                    dis_acc.prepend(ByteArray::from_data(policy.get(0)), discount)
-                }, acc)
+                acc.prepend(ByteArray::from_data(policy.get(0)),[]Int::from_data(policy.get(1)))
             }, Map[ByteArray][]Int{});
             sorted_map: Map[ByteArray][]Int = discounts.sort((_, a: []Int, _, b: []Int) -> Bool {a.get(1) <= b.get(1)});
             sorted_map.fold_lazy[Int]((policy: ByteArray, discount: []Int, next: () -> Int) -> Int {
