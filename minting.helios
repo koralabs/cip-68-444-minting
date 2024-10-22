@@ -1,8 +1,12 @@
 minting cip_68_444_minting
 
 enum Redeemer {
-    MINT
-    BURN
+    MINT {
+        settings_hash: ByteArray
+    }
+    BURN {
+        settings_hash: ByteArray
+    }
 }
 
 struct MintConfig {
@@ -40,7 +44,9 @@ const HANDLE_POLICY: MintingPolicyHash = MintingPolicyHash::new(#f0ff48bbb7bbe9d
 const LBL_444: ByteArray = #001bc280 // (444)
 const LBL_222: ByteArray = #000de140 // (222)
 const LBL_100: ByteArray = #000643b0 // (100)
-const SETTINGS_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + (SETTINGS_HANDLE_NAME.encode_utf8()))
+const LBL_002: ByteArray = #000020e0 // (002)
+const ROOT_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + (SETTINGS_HANDLE_NAME.encode_utf8()))
+const SETTINGS_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_002 + (SETTINGS_HANDLE_NAME.encode_utf8()))
 const CONFIG_HANDLE: AssetClass = AssetClass::new(HANDLE_POLICY, LBL_222 + ("mint_config_444".encode_utf8()))
 
 func load_config(ctx: ScriptContext) -> MintConfig {
@@ -53,27 +59,19 @@ func load_config(ctx: ScriptContext) -> MintConfig {
     config
 }
 
-func load_settings(ctx: ScriptContext) -> (MintSettings, Bool) {
+func load_settings(redeemer: Redeemer, ctx: ScriptContext) -> (MintSettings, Bool) {
+    root_output_reg: Option[TxOutput] = ctx.tx.outputs.find_safe((output: TxOutput) -> Bool { 
+        output.value.get_safe(ROOT_HANDLE) == 1
+    });
     settings_input_ref: Option[TxInput] = ctx.tx.ref_inputs.find_safe((input: TxInput) -> Bool { 
         input.output.value.get_safe(SETTINGS_HANDLE) == 1
     });
-    settings_output_reg: Option[TxOutput] = ctx.tx.outputs.find_safe((output: TxOutput) -> Bool { 
-        output.value.get_safe(SETTINGS_HANDLE) == 1
-    });
     
-    assert(settings_input_ref != Option[TxInput]::None || settings_output_reg != Option[TxOutput]::None, "settings input missing");
-
-    if (settings_output_reg != Option[TxOutput]::None) {
-        (MintSettings::from_data(settings_output_reg.unwrap().datum.get_inline_data()), true)
-    }
-    else {
-        signed: Bool = ctx.tx.signatories.find_safe((pubkey: PubKeyHash) -> {
-            settings_input_ref.unwrap().output.address.credential.switch{
-                    p: PubKey => p.hash, 
-                    else => error("Invalid credential hash")} == pubkey}
-            ) != Option[PubKeyHash]::None;
-        (MintSettings::from_data(settings_input_ref.unwrap().output.datum.get_inline_data()), signed)
-    }
+    assert(settings_input_ref != Option[TxInput]::None, "settings input missing");
+    (MintSettings::from_data(Map[ByteArray]Data::from_data(settings_input_ref.unwrap().output.datum.get_inline_data()).get(redeemer.switch {
+        m: MINT => m.settings_hash,
+        b: BURN => b.settings_hash
+    })), root_output_reg != Option[TxOutput]::None)
 }
 
 func get_mint_fee(payment: Int, config: MintConfig) -> Int {
@@ -130,7 +128,7 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig,
 }
 
 func main(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
-    (settings: MintSettings, signed_by_owner: Bool) = load_settings(ctx);
+    (settings: MintSettings, signed_by_owner: Bool) = load_settings(redeemer, ctx);
     minted_assets: Map[ByteArray]Int = ctx.tx.minted.get_policy(ctx.get_current_minting_policy_hash());
     redeemer.switch {
         MINT => {

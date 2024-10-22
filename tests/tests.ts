@@ -1,8 +1,8 @@
-// @ts-nocheck
 import fs from "fs";
-import * as helios from '@hyperionbt/helios'
-import { ContractTester, Test } from './contractTester.js'
-import { CommonFixtures, EditingFixtures, LBL_100, LBL_444, MintingFixtures, paymentAddress, refTokenAddress } from "./fixtures.js";
+import * as helios from '@koralabs/helios'
+import { ContractTester, Test } from '@koralabs/kora-labs-contract-testing'
+import { CommonFixtures, EditingFixtures, MintingFixtures, paymentAddress, refTokenAddress } from "./fixtures";
+import { AssetNameLabel, HexString } from "@koralabs/kora-labs-common";
 helios.config.set({ IS_TESTNET: false, AUTO_SET_VALIDITY_RANGE: true });
 
 const runTests = async () => {
@@ -17,29 +17,29 @@ const runTests = async () => {
     editingProgram.parameters.MINTING_POLICY_ID = mintingContract.mintingPolicyHash.hex;
     const editingContract = editingProgram.compile();
 
-    let commonFixtures = new CommonFixtures();
+    let commonFixtures = new CommonFixtures(editingContract.validatorHash);
     await commonFixtures.initialize();
 
-    const commonFixtureMax = new CommonFixtures();
+    const commonFixtureMax = new CommonFixtures(editingContract.validatorHash);
     const settingsMax = [
         `0x${helios.Address.fromBech32(paymentAddress).toHex()}`,
         `0x${helios.Address.fromBech32(refTokenAddress).toHex()}`,
         []
-    ];
+    ] as (HexString | any[])[];
     const maxAssets = 300;
     const pad0 = 4; // 4 or 56
     const maxAsset = maxAssets.toString().padStart(pad0, '0'); // 4 or 56
     for (let i=1; i <= maxAssets; i++) {
-        settingsMax[2].push([`0x${LBL_444}${i.toString().padStart(pad0,'0')}`, ["0x0000000000000000000000000000000000000000000000000000000000000001", 0], 0, 0, [] ])
+        (settingsMax[2] as any[]).push([`0x${AssetNameLabel.LBL_444}${i.toString().padStart(pad0,'0')}`, ["0x0000000000000000000000000000000000000000000000000000000000000001", 0], 0, 0, [] ])
     }
     await commonFixtureMax.initialize(settingsMax);
     console.log(`CBOR size of settings with ${maxAssets} assets is ${commonFixtureMax.settingsCbor.length / 2}`)
     
-    const mintingFixtures = new MintingFixtures(mintingContract.mintingPolicyHash.hex, commonFixtures, commonFixtures.configCbor);
+    const mintingFixtures = new MintingFixtures(mintingContract.mintingPolicyHash, mintingContract.mintingPolicyHash.hex, commonFixtures, commonFixtures.configCbor);
 
-    const editingFixtures = new EditingFixtures(mintingContract.mintingPolicyHash.hex, commonFixtures, commonFixtures.configCbor, helios.Address.fromHash(new helios.ValidatorHash(editingContract.validatorHash.hex)));
+    const editingFixtures = new EditingFixtures(mintingContract.mintingPolicyHash, mintingContract.mintingPolicyHash.hex, commonFixtures, commonFixtures.configCbor, helios.Address.fromHash(new helios.ValidatorHash(editingContract.validatorHash.hex)));
     
-    const tester = new ContractTester(commonFixtures.walletAddress);
+    const tester = new ContractTester(helios.Address.fromBech32(commonFixtures.walletAddress));
     await tester.init();
     
     Promise.all([
@@ -53,15 +53,15 @@ const runTests = async () => {
             return mintingFixtures;
         })),
         tester.test("MINTING", "Max assets, Mint 444 & 100", new Test(mintingProgram, () => {
-            const mintingMax = new MintingFixtures(mintingProgram.compile(true).mintingPolicyHash.hex, commonFixtureMax, commonFixtureMax.configCbor);
+            const mintingMax = new MintingFixtures(mintingContract.mintingPolicyHash, mintingProgram.compile(true).mintingPolicyHash.hex, commonFixtureMax, commonFixtureMax.configCbor);
             mintingMax.initialize();
             mintingMax.outputs = mintingMax.outputs?.slice(0,2).concat([new helios.TxOutput(
-                helios.Address.fromBech32(commonFixtureMax.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([[mintingMax.policyId, [[`${LBL_444}${maxAsset}`, BigInt(1)]]]]))
+                helios.Address.fromBech32(commonFixtureMax.walletAddress), new helios.Value(BigInt(5000000), new helios.Assets([[mintingMax.policyId, [[`${AssetNameLabel.LBL_444}${maxAsset}`, BigInt(1)]]]]))
             ),
             new helios.TxOutput(
-                helios.Address.fromBech32(commonFixtureMax.refTokenAddress), new helios.Value(BigInt(5000000), new helios.Assets([[mintingMax.policyId, [[`${LBL_100}${maxAsset}`, BigInt(1)]]]]))
+                helios.Address.fromBech32(commonFixtureMax.refTokenAddress), new helios.Value(BigInt(5000000), new helios.Assets([[mintingMax.policyId, [[`${AssetNameLabel.LBL_100}${maxAsset}`, BigInt(1)]]]]))
             )]);
-            mintingMax.minted = [[`${LBL_444}${maxAsset}`, BigInt(1)], [`${LBL_100}${maxAsset}`, BigInt(1)]];
+            mintingMax.minted = [[`${AssetNameLabel.LBL_444}${maxAsset}`, BigInt(1)], [`${AssetNameLabel.LBL_100}${maxAsset}`, BigInt(1)]];
             return mintingMax;
         }, undefined, true)),
         tester.test("MINTING", "Multiple 444 mints w/ discount", new Test(mintingProgram, () => {
@@ -108,11 +108,11 @@ const runTests = async () => {
             mintingFixtures.initialize();
             mintingFixtures.inputs?.push(new helios.TxInput(
                 new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000001#1`),
-                new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(10000000), new helios.Assets([[mintingFixtures.policyId, [[`${LBL_100}74657374`, BigInt(2)], [`${LBL_100}7465737431`, BigInt(2)]]]]))
+                new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(10000000), new helios.Assets([[mintingFixtures.policyId, [[`${AssetNameLabel.LBL_100}74657374`, BigInt(2)], [`${AssetNameLabel.LBL_100}7465737431`, BigInt(2)]]]]))
             )));
-            mintingFixtures.minted = [[`${LBL_100}74657374`, BigInt(-1)], [`${LBL_100}7465737431`, BigInt(-1)]];
+            mintingFixtures.minted = [[`${AssetNameLabel.LBL_100}74657374`, BigInt(-1)], [`${AssetNameLabel.LBL_100}7465737431`, BigInt(-1)]];
             mintingFixtures.outputs = [new helios.TxOutput(helios.Address.fromBech32(commonFixtures.refTokenAddress), 
-                    new helios.Value(BigInt(5000000), new helios.Assets([[mintingFixtures.policyId, [[`${LBL_100}74657374`, 1],[`${LBL_100}7465737431`, 1]]]]))
+                    new helios.Value(BigInt(5000000), new helios.Assets([[mintingFixtures.policyId, [[`${AssetNameLabel.LBL_100}74657374`, 1],[`${AssetNameLabel.LBL_100}7465737431`, 1]]]]))
             )];
             mintingFixtures.redeemer = helios.UplcData.fromCbor('d87a9fff');
             return mintingFixtures;
@@ -133,9 +133,9 @@ const runTests = async () => {
             mintingFixtures.initialize();
             mintingFixtures.inputs?.push(new helios.TxInput(
                 new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000001#1`),
-                new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(10000000), new helios.Assets([[mintingFixtures.policyId, [[`${LBL_100}74657374`, BigInt(2)], [`${LBL_100}7465737431`, BigInt(2)]]]]))
+                new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(10000000), new helios.Assets([[mintingFixtures.policyId, [[`${AssetNameLabel.LBL_100}74657374`, BigInt(2)], [`${AssetNameLabel.LBL_100}7465737431`, BigInt(2)]]]]))
             )));
-            mintingFixtures.minted = [[`${LBL_100}74657374`, BigInt(-2)], [`${LBL_100}7465737431`, BigInt(-2)]];
+            mintingFixtures.minted = [[`${AssetNameLabel.LBL_100}74657374`, BigInt(-2)], [`${AssetNameLabel.LBL_100}7465737431`, BigInt(-2)]];
             mintingFixtures.outputs = undefined;
             mintingFixtures.redeemer = helios.UplcData.fromCbor('d87a9fff');
             return mintingFixtures;
@@ -144,9 +144,9 @@ const runTests = async () => {
             mintingFixtures.initialize();
             mintingFixtures.inputs?.push(new helios.TxInput(
                 new helios.TxOutputId(`0000000000000000000000000000000000000000000000000000000000000001#1`),
-                new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(10000000), new helios.Assets([[mintingFixtures.policyId, [[`${LBL_100}74657374`, BigInt(2)], [`${LBL_444}7465737431`, BigInt(2)]]]]))
+                new helios.TxOutput(helios.Address.fromBech32(commonFixtures.walletAddress), new helios.Value(BigInt(10000000), new helios.Assets([[mintingFixtures.policyId, [[`${AssetNameLabel.LBL_100}74657374`, BigInt(2)], [`${AssetNameLabel.LBL_444}7465737431`, BigInt(2)]]]]))
             )));
-            mintingFixtures.minted = [[`${LBL_100}74657374`, BigInt(-1)], [`${LBL_444}7465737431`, BigInt(-1)]];
+            mintingFixtures.minted = [[`${AssetNameLabel.LBL_100}74657374`, BigInt(-1)], [`${AssetNameLabel.LBL_444}7465737431`, BigInt(-1)]];
             mintingFixtures.outputs = undefined;
             mintingFixtures.redeemer = helios.UplcData.fromCbor('d87a9fff');
             return mintingFixtures;

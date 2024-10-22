@@ -2,3 +2,4 @@ node_modules
 /tests/testingCode.helios
 /contract
 test.js
+package-lock.json
