@@ -102,7 +102,7 @@ func get_mint_cost(asset: ByteArray, settings: MintSettings, config: MintConfig,
                             total: Int = output.value.get_assets().to_map().get_safe(mph).switch{
                                     Some{assets} => {
                                         assets.fold_lazy[Int]((asset: ByteArray, count: Int, next: () -> Int) -> Int {
-                                            if (policy.length > 28 || asset.starts_with(policy.slice(28, policy.length))) {
+                                            if (policy.length > 28 && asset.starts_with(policy.slice(28, policy.length))) {
                                                 count + next()
                                             } else {next()}
                                         }, 0)
