@@ -1,5 +1,6 @@
 import * as helios from '@hyperionbt/helios'
 import * as https from 'https'
+import fs from 'fs';
 import { mnemonicToEntropy } from 'bip39';
 import bip32 from '@stricahq/bip32ed25519';
 
@@ -25,6 +26,27 @@ export const walletAddress = helios.Address.fromHash(new helios.PubKeyHash([...(
 export const paymentAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase,1 )).toPublicKey().hash()])).toBech32();
 export const refTokenAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 2)).toPublicKey().hash()])).toBech32();
 export const feeAddress = helios.Address.fromHash(new helios.PubKeyHash([...(await getKeyFromSeedPhrase(testSeedPhrase, 3)).toPublicKey().hash()])).toBech32();
+
+const resolveUserAgent = () => {
+    if (process.env.KORA_USER_AGENT) {
+        return process.env.KORA_USER_AGENT;
+    }
+
+    try {
+        const envText = fs.readFileSync('./.env', 'utf8');
+        const line = envText.split('\n').find((candidate) => candidate.trim().startsWith('KORA_USER_AGENT='));
+        if (line) {
+            const value = line.split('=').slice(1).join('=').trim();
+            return value.replace(/^['"]|['"]$/g, '');
+        }
+    } catch (_error) {
+        // No local .env in CI/test contexts is expected.
+    }
+
+    return 'koralabs-cip-68-444-minting-tests';
+};
+
+const HANDLE_USER_AGENT = resolveUserAgent();
 
 export class Fixtures {
     inputs?: helios.TxInput[];
@@ -118,14 +140,15 @@ export class CommonFixtures extends Fixtures {
         return new Promise((resolve, reject) => {
             const postData = JSON.stringify(json);
             const options = {
-            hostname: 'preview.api.handle.me',
+            hostname: 'api.handle.me',
             port: 443,
             path: '/datum?from=json&to=plutus_data_cbor&numeric_keys=true',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Content-Length': postData.length,
-                'Accept': 'text/plain'
+                'Accept': 'text/plain',
+                'User-Agent': HANDLE_USER_AGENT
                 }
             };
             let data = '';

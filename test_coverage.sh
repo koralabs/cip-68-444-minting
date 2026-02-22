@@ -4,29 +4,46 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT_DIR"
 
-TMP_OUTPUT="$(mktemp /tmp/cip-68-444-coverage.XXXXXX)"
 REPORT_FILE="$ROOT_DIR/test_coverage.report"
-trap 'rm -f "$TMP_OUTPUT"' EXIT
+TMP_DIR="$(mktemp -d /tmp/cip-68-444-coverage.XXXXXX)"
+trap 'rm -rf "$TMP_DIR"' EXIT
 
-node --experimental-strip-types --test \
-  --experimental-test-coverage \
-  --test-coverage-include='tests/colors.ts' \
-  tests/coverage.targets.test.ts | tee "$TMP_OUTPUT"
+TEST_OUT="$TMP_DIR/npm-test.out"
+C8_OUT="$TMP_DIR/c8.out"
 
-coverage_line="$(grep -E '^# all files' "$TMP_OUTPUT" | tail -1)"
-if [ -z "$coverage_line" ]; then
-  echo "Unable to parse coverage summary from test output" >&2
+# Standard test entrypoint.
+npm test | tee "$TEST_OUT"
+
+# Measurable TypeScript harness scope.
+npx c8 \
+  --all \
+  --include='tests/**/*.ts' \
+  --exclude='**/node_modules/**' \
+  --exclude='**/*.test.ts' \
+  --reporter=text \
+  --reporter=text-summary \
+  npm test | tee "$C8_OUT"
+
+line_pct="$(
+  awk -F':' '/^Lines/{value=$2; gsub(/^ +/, "", value); sub(/%.*$/, "", value); print value; exit}' "$C8_OUT"
+)"
+branch_pct="$(
+  awk -F':' '/^Branches/{value=$2; gsub(/^ +/, "", value); sub(/%.*$/, "", value); print value; exit}' "$C8_OUT"
+)"
+
+if [[ -z "$line_pct" || -z "$branch_pct" ]]; then
+  echo "Unable to parse c8 summary metrics" >&2
   exit 1
 fi
 
-line_pct="$(echo "$coverage_line" | awk -F'|' '{gsub(/ /, "", $2); print $2}')"
-branch_pct="$(echo "$coverage_line" | awk -F'|' '{gsub(/ /, "", $3); print $3}')"
-
-STATUS="pass"
-LANGUAGE_STATUS="pass"
+MEASURED_STATUS="pass"
 if awk -v line="$line_pct" -v branch="$branch_pct" 'BEGIN { exit !((line + 0) < 90 || (branch + 0) < 90) }'; then
+  MEASURED_STATUS="fail"
+fi
+
+STATUS="partial"
+if [[ "$MEASURED_STATUS" == "fail" ]]; then
   STATUS="fail"
-  LANGUAGE_STATUS="fail"
 fi
 
 {
@@ -38,17 +55,20 @@ fi
   echo "TOTAL_LINES_PCT=$line_pct"
   echo "TOTAL_BRANCHES_PCT=$branch_pct"
   echo "STATUS=$STATUS"
-  echo "SOURCE_PATHS=tests/colors.ts"
-  echo "EXCLUDED_PATHS=NON_CRITICAL_RUNTIME_PATHS:covered_by_separate_suites"
-  echo "LANGUAGE_SUMMARY=nodejs:lines=$line_pct,branches=$branch_pct,tool=node-test-coverage,status=$LANGUAGE_STATUS"
+  echo "SOURCE_PATHS=minting.helios,editing.helios,tests/**/*.ts"
+  echo "EXCLUDED_PATHS=minting.helios:helios_source_not_supported_by_v8_coverage;editing.helios:helios_source_not_supported_by_v8_coverage"
+  echo "LANGUAGE_SUMMARY=typescript-tests:lines=$line_pct,branches=$branch_pct,tool=c8,status=$MEASURED_STATUS;helios:lines=NA,branches=NA,tool=helios-runtime-tests,status=na"
   echo ""
-  echo "=== RAW_OUTPUT_NODE_TEST ==="
-  cat "$TMP_OUTPUT"
+  echo "=== RAW_OUTPUT_NPM_TEST ==="
+  cat "$TEST_OUT"
+  echo ""
+  echo "=== RAW_OUTPUT_C8 ==="
+  cat "$C8_OUT"
 } > "$REPORT_FILE"
 
-if [[ "$STATUS" != "pass" ]]; then
-  echo "Coverage threshold failed: lines=$line_pct, branches=$branch_pct" >&2
+if [[ "$MEASURED_STATUS" != "pass" ]]; then
+  echo "Coverage threshold failed for measured scope: lines=$line_pct, branches=$branch_pct" >&2
   exit 1
 fi
 
-echo "Coverage threshold met: lines=$line_pct, branches=$branch_pct"
+echo "Measured coverage threshold met: lines=$line_pct, branches=$branch_pct"

@@ -1,45 +1,175 @@
 FORMAT_VERSION=1
 REPO=cip-68-444-minting
-TIMESTAMP_UTC=2026-02-22T16:26:53Z
+TIMESTAMP_UTC=2026-02-22T18:27:15Z
 THRESHOLD_LINES=90
 THRESHOLD_BRANCHES=90
-TOTAL_LINES_PCT=100.00
-TOTAL_BRANCHES_PCT=100.00
-STATUS=pass
-SOURCE_PATHS=tests/colors.ts
-EXCLUDED_PATHS=NON_CRITICAL_RUNTIME_PATHS:covered_by_separate_suites
-LANGUAGE_SUMMARY=nodejs:lines=100.00,branches=100.00,tool=node-test-coverage,status=pass
+TOTAL_LINES_PCT=99.21
+TOTAL_BRANCHES_PCT=90.29
+STATUS=partial
+SOURCE_PATHS=minting.helios,editing.helios,tests/**/*.ts
+EXCLUDED_PATHS=minting.helios:helios_source_not_supported_by_v8_coverage;editing.helios:helios_source_not_supported_by_v8_coverage
+LANGUAGE_SUMMARY=typescript-tests:lines=99.21,branches=90.29,tool=c8,status=pass;helios:lines=NA,branches=NA,tool=helios-runtime-tests,status=na
 
-=== RAW_OUTPUT_NODE_TEST ===
+=== RAW_OUTPUT_NPM_TEST ===
+
+> cip-68-444-minting@1.0.0 test
+> tsx tests/tests.ts && node --import tsx --test tests/**/*.test.ts
+
+CBOR size of settings with 300 assets is 15066
+INFO (cip_68_444_minting:194:19) The BURN redeemer only allows reference tokens to be burnt
+[32m*success* - DENY    - MINTING                   'Burn 444 token'[0m ( mem:0, cpu:0, size:529 )
+INFO (cip_68_444_minting:205:23) There should be at least one reference token remaining
+[32m*success* - DENY    - MINTING                   'Burn too many'[0m ( mem:0, cpu:0, size:438 )
+[32m*success* - APPROVE - EDITING                   'happy path'[0m ( mem:437809, cpu:162166869, size:381 )
+[32m*success* - APPROVE - MINTING                   'Burn approved'[0m ( mem:786002, cpu:268993106, size:494 )
+INFO (cip_68_444_minting:183:19) Policy minting payment is unpaid: ₳94
+[32m*success* - DENY    - MINTING                   'Multiple 444 mints, low payment'[0m ( mem:0, cpu:0, size:557 )
+[32m*success* - APPROVE - MINTING                   'Multiple 444 mints w/ different discount'[0m ( mem:3711772, cpu:1226778608, size:648 )
+[32m*success* - APPROVE - MINTING                   'Multiple 444 mints'[0m ( mem:4357516, cpu:1423985538, size:522 )
+[32m*success* - APPROVE - MINTING                   'Multiple 444 mints w/ discount'[0m ( mem:4356464, cpu:1442331405, size:634 )
+[32m*success* - APPROVE - MINTING                   'New Policy, 444 mints, 100 mints'[0m ( mem:9776368, cpu:3576052841, size:688 )
+[32m*success* - APPROVE - MINTING                   'Max assets, Mint 444 & 100'[0m ( mem:10887583, cpu:4108281752, size:592 )
+[34m** SUMMARY **[0m
+[34m   10 total tests[0m
+[32m   10 successful[0m
 TAP version 13
-# (node:787477) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
-# (Use `node --trace-warnings ...` to show where the warning was created)
-# Subtest: Color map exposes expected ANSI reset and foreground codes
-ok 1 - Color map exposes expected ANSI reset and foreground codes
+# [32m*success* - APPROVE - groupA                    'nameA'[0m ( mem:2, cpu:3, size:2 )
+# [32m*success* - DENY    - groupA                    'nameB'[0m ( mem:2, cpu:3, size:2 )
+# [31m------------------------------[0m
+# [31m*failure* - APPROVE - groupA                    'nameC'[0m ( mem:2, cpu:3, size:2 )
+#    [33mERROR:[0m
+# Error: unexpected
+#     at Object.finalize (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.test.ts:1:466)
+#     at ContractTester.test (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.ts:1:2118)
+#     at TestContext.<anonymous> (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.test.ts:1:2419)
+#     at async Test.run (node:internal/test_runner/test:932:9)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:629:7)
+#    [33mEXPECTED:
+#    [34msuccess[0m
+#    [33mRECEIVED:
+#    [31mtx denied[0m
+# [31m------------------------------[0m
+# Subtest: Test constructor and build path apply fixtures and tx actions
+ok 1 - Test constructor and build path apply fixtures and tx actions
   ---
-  duration_ms: 0.472412
+  duration_ms: 0.527
   ...
-# Subtest: Color map keys are unique and every value is an ANSI string
-ok 2 - Color map keys are unique and every value is an ANSI string
+# Subtest: ContractTester test() supports filters and approve/deny outcomes
+ok 2 - ContractTester test() supports filters and approve/deny outcomes
   ---
-  duration_ms: 0.124639
+  duration_ms: 1.582239
   ...
-1..2
-# tests 2
+# Subtest: ContractTester utility methods and init/group naming paths execute
+ok 3 - ContractTester utility methods and init/group naming paths execute
+  ---
+  duration_ms: 0.385144
+  ...
+# Subtest: fixtures fallback path works when .env is not present
+ok 4 - fixtures fallback path works when .env is not present
+  ---
+  duration_ms: 128.580327
+  ...
+# Subtest: fixtures honors KORA_USER_AGENT when provided
+ok 5 - fixtures honors KORA_USER_AGENT when provided
+  ---
+  duration_ms: 24.039282
+  ...
+1..5
+# tests 5
 # suites 0
-# pass 2
+# pass 5
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 59.61413
-# start of coverage report
-# -----------------------------------------------------------
-# file       | line % | branch % | funcs % | uncovered lines
-# -----------------------------------------------------------
-# tests      |        |          |         | 
-#  colors.ts | 100.00 |   100.00 |  100.00 | 
-# -----------------------------------------------------------
-# all files  | 100.00 |   100.00 |  100.00 | 
-# -----------------------------------------------------------
-# end of coverage report
+# duration_ms 256.844711
+
+=== RAW_OUTPUT_C8 ===
+
+> cip-68-444-minting@1.0.0 test
+> tsx tests/tests.ts && node --import tsx --test tests/**/*.test.ts
+
+CBOR size of settings with 300 assets is 15066
+INFO (cip_68_444_minting:194:19) The BURN redeemer only allows reference tokens to be burnt
+[32m*success* - DENY    - MINTING                   'Burn 444 token'[0m ( mem:0, cpu:0, size:529 )
+INFO (cip_68_444_minting:205:23) There should be at least one reference token remaining
+[32m*success* - DENY    - MINTING                   'Burn too many'[0m ( mem:0, cpu:0, size:438 )
+[32m*success* - APPROVE - EDITING                   'happy path'[0m ( mem:437809, cpu:162166869, size:381 )
+[32m*success* - APPROVE - MINTING                   'Burn approved'[0m ( mem:786002, cpu:268993106, size:494 )
+INFO (cip_68_444_minting:183:19) Policy minting payment is unpaid: ₳94
+[32m*success* - DENY    - MINTING                   'Multiple 444 mints, low payment'[0m ( mem:0, cpu:0, size:557 )
+[32m*success* - APPROVE - MINTING                   'Multiple 444 mints w/ different discount'[0m ( mem:3711772, cpu:1226778608, size:648 )
+[32m*success* - APPROVE - MINTING                   'Multiple 444 mints'[0m ( mem:4357516, cpu:1423985538, size:522 )
+[32m*success* - APPROVE - MINTING                   'Multiple 444 mints w/ discount'[0m ( mem:4356464, cpu:1442331405, size:634 )
+[32m*success* - APPROVE - MINTING                   'New Policy, 444 mints, 100 mints'[0m ( mem:9776368, cpu:3576052841, size:688 )
+[32m*success* - APPROVE - MINTING                   'Max assets, Mint 444 & 100'[0m ( mem:10887583, cpu:4108281752, size:592 )
+[34m** SUMMARY **[0m
+[34m   10 total tests[0m
+[32m   10 successful[0m
+TAP version 13
+# [32m*success* - APPROVE - groupA                    'nameA'[0m ( mem:2, cpu:3, size:2 )
+# [32m*success* - DENY    - groupA                    'nameB'[0m ( mem:2, cpu:3, size:2 )
+# [31m------------------------------[0m
+# [31m*failure* - APPROVE - groupA                    'nameC'[0m ( mem:2, cpu:3, size:2 )
+#    [33mERROR:[0m
+# Error: unexpected
+#     at Object.finalize (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.test.ts:1:466)
+#     at ContractTester.test (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.ts:1:2118)
+#     at TestContext.<anonymous> (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.test.ts:1:2419)
+#     at async Test.run (node:internal/test_runner/test:932:9)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:629:7)
+#    [33mEXPECTED:
+#    [34msuccess[0m
+#    [33mRECEIVED:
+#    [31mtx denied[0m
+# [31m------------------------------[0m
+# Subtest: Test constructor and build path apply fixtures and tx actions
+ok 1 - Test constructor and build path apply fixtures and tx actions
+  ---
+  duration_ms: 0.617024
+  ...
+# Subtest: ContractTester test() supports filters and approve/deny outcomes
+ok 2 - ContractTester test() supports filters and approve/deny outcomes
+  ---
+  duration_ms: 1.559077
+  ...
+# Subtest: ContractTester utility methods and init/group naming paths execute
+ok 3 - ContractTester utility methods and init/group naming paths execute
+  ---
+  duration_ms: 0.286836
+  ...
+# Subtest: fixtures fallback path works when .env is not present
+ok 4 - fixtures fallback path works when .env is not present
+  ---
+  duration_ms: 178.461492
+  ...
+# Subtest: fixtures honors KORA_USER_AGENT when provided
+ok 5 - fixtures honors KORA_USER_AGENT when provided
+  ---
+  duration_ms: 50.803115
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 369.137109
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   99.21 |    90.29 |   96.29 |   99.21 |                   
+ colors.ts         |     100 |      100 |     100 |     100 |                   
+ contractTester.ts |   98.88 |       90 |    92.3 |   98.88 | 115-116           
+ fixtures.ts       |   98.88 |    85.71 |     100 |   98.88 | 33-35             
+ tests.ts          |     100 |      100 |     100 |     100 |                   
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 99.21% ( 635/640 )
+Branches     : 90.29% ( 93/103 )
+Functions    : 96.29% ( 26/27 )
+Lines        : 99.21% ( 635/640 )
+================================================================================

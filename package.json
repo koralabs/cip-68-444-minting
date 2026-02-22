@@ -4,7 +4,7 @@
     "description": "",
     "type": "module",
     "scripts": {
-        "test": "tsx tests/tests.ts"
+        "test": "tsx tests/tests.ts && node --import tsx --test tests/**/*.test.ts"
     },
     "license": "unlicense",
     "dependencies": {
