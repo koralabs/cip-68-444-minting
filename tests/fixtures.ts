@@ -2,7 +2,7 @@ import * as helios from '@hyperionbt/helios'
 import * as https from 'https'
 import fs from 'fs';
 import { mnemonicToEntropy } from 'bip39';
-import bip32 from '@stricahq/bip32ed25519';
+import { Bip32PrivateKey, PrivateKey } from './bip32Ed25519Compat';
 
 helios.config.set({ IS_TESTNET: false, AUTO_SET_VALIDITY_RANGE: true });
 
@@ -13,10 +13,10 @@ export const LBL_444 = '001bc280';
 export const configHandle = `${LBL_222}${Buffer.from('mint_config_444').toString('hex')}`;
 export const settingsHandle = `${LBL_222}${Buffer.from('settings').toString('hex')}`;
 
-export const getKeyFromSeedPhrase = async (seed: string[], derivation = 0): Promise<bip32.PrivateKey> => {
+export const getKeyFromSeedPhrase = async (seed: string[], derivation = 0): Promise<PrivateKey> => {
     const entropy = mnemonicToEntropy(seed.join(' '));
     const buffer = Buffer.from(entropy, 'hex');
-    const rootKey = await bip32.Bip32PrivateKey.fromEntropy(buffer);
+    const rootKey = await Bip32PrivateKey.fromEntropy(buffer);
     return rootKey.derive(2147483648 + 1852).derive(2147483648 + 1815).derive(2147483648 + 0).derive(0).derive(derivation).toPrivateKey();
 }
 

@@ -8,8 +8,8 @@
     },
     "license": "unlicense",
     "dependencies": {
+        "@emurgo/cardano-serialization-lib-nodejs": "^15.0.3",
         "@hyperionbt/helios": "0.16.7",
-        "@stricahq/bip32ed25519": "^1.1.2",
         "bip39": "^3.1.0"
     },
     "devDependencies": {
