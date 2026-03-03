@@ -2,3 +2,5 @@ node_modules
 /tests/testingCode.helios
 /contract
 test.js
+# K.O.R.A executor logs
+.kora/executor-logs/
