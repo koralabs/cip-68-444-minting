@@ -42,7 +42,7 @@ const runTests = async () => {
     const tester = new ContractTester(commonFixtures.walletAddress);
     await tester.init();
     
-    Promise.all([
+    const scenarios = [
         // Minting Contract - SHOULD APPROVE
         tester.test("MINTING", "New Policy, 444 mints, 100 mints", new Test(mintingProgram, mintingFixtures.initialize)),
         tester.test("MINTING", "Multiple 444 mints", new Test(mintingProgram, () => {
@@ -154,8 +154,14 @@ const runTests = async () => {
         
         // Editing Contract - SHOULD APPROVE
         tester.test("EDITING", "happy path", new Test(editingProgram, editingFixtures.initialize)),
-    ]
-    ).then(() => {tester.displayStats()});
+    ];
+
+    await Promise.all(scenarios);
+    tester.displayStats();
+    const totals = tester.getTotals();
+    if (totals.testCount !== scenarios.length || totals.failCount > 0) {
+        throw new Error(`contract scenario failures detected (executed=${totals.testCount}, expected=${scenarios.length}, failed=${totals.failCount})`);
+    }
 }
 
 (async()=> {

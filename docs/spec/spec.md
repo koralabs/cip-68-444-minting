@@ -3,6 +3,7 @@
 ## Contract Files
 - `minting.helios`: minting policy for CIP-68 `444` assets and `100` reference tokens.
 - `editing.helios`: spending script for controlled reference-token update transactions.
+- Detailed path-by-path inventory: `docs/spec/code-paths.md`.
 
 ## Data Model (Helios Structs)
 - Minting policy structs:
