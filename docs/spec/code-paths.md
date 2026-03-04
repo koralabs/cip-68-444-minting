@@ -1,5 +1,18 @@
 # Contract Code Paths
 
+## Migration Note (Aiken + MPF)
+- The active on-chain implementation now lives in Aiken (`validators/*.ak`, `lib/cip_68_444/*.ak`).
+- This Helios document remains the canonical baseline path inventory used for parity.
+- Aiken parity tests live in `lib/cip_68_444/path_tests.ak` and are guarded by `tests/aikenPathParity.test.ts`.
+- One structural migration change:
+  - Stable proxy validators now enforce a `withdraw 0` observer witness:
+    - mint proxy checks `settings.mint_governor`
+    - editing proxy checks `settings.editing_governor`
+  - Logic is executed in observer withdrawal validators, so policy ID / script address can remain stable across logic upgrades.
+  - `settings.assets` remains the source of per-asset metadata (price, discounts, required UTxO, validity).
+  - MPF is used for asset-name key membership (`mpf.has(...)`) rather than storing full asset metadata.
+  - The former Helios dynamic discount-data decode hazards (`M-COST-10`, `M-COST-11`) are represented in Aiken via typed data decoding boundaries and explicit malformed datum tests (`mint_settings_*_decode_fails`, `mint_deny_config_decode_fails`) plus MPF proof-mismatch rejection (`mpf_proof_mismatch_rejected`).
+
 This document inventories every branch and failure path in:
 - `minting.helios`
 - `editing.helios`
