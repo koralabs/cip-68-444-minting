@@ -1,13 +1,15 @@
 # Contract Deployment Pipeline Spec
 
 ## Repository Scope
-This repo owns the desired on-chain deployment state for CIP-68 / 444 minting contracts and their contract-level settings.
+This repo is not a static network-wide deployed-contract target in the same way as the other contract repos.
 
-The repo should define what ought to be live on `preview`, `preprod`, and `mainnet`. It should not be treated as the storage location for volatile live references such as current settings UTxO refs.
+Each new collection contract is built per user/handle, with that handle injected into the contract at build time. Because of that, this repo does not map to one canonical deployed contract hash on `preview`, `preprod`, or `mainnet`.
+
+For deployment automation, the stable monitored state here is limited to the K.O.R.A.-owned settings UTxO that governs the launch flow. This repo should not be treated as the storage location for volatile live references such as current settings UTxO refs.
 
 ## State Model
 - Desired state lives in committed YAML files in this repo.
-- Observed live state is read from chain UTxOs and deployed script hashes.
+- Observed live state is read from the K.O.R.A.-owned settings UTxO on-chain.
 - Operational automation config lives outside this repo in orchestration/control-plane repos.
 - Volatile fields such as `tx_hash`, `output_index`, and current UTxO refs belong in observed-state artifacts, not committed desired-state YAML.
 
@@ -23,34 +25,22 @@ Each file should contain stable desired state only:
 ```yaml
 schema_version: 1
 network: preview
-contract_slug: cip-68-444
-build:
-  target: <repo build target>
-  kind: validator
-subhandle_strategy:
-  namespace: handlecontracts
-  format: contract_slug_ordinal
+contract_slug: cip-68-444-settings
 settings:
   type: cip_68_444_settings
   values:
-    # repo-owned datum/settings values only
+    # K.O.R.A.-owned launch settings only
 ```
 
 Required stable fields:
 - `schema_version`
 - `network`
 - `contract_slug`
-- `build.target`
-- `build.kind`
-- `subhandle_strategy.namespace`
-- `subhandle_strategy.format`
 - `settings.type`
 - `settings.values`
 
 Observed-only fields that must not be committed into desired-state YAML:
-- `current_script_hash`
 - `current_settings_utxo_ref`
-- `current_subhandle`
 - `observed_at`
 - `last_deployed_tx_hash`
 
@@ -58,17 +48,16 @@ The initial bootstrap job may populate these files from current chain state, but
 
 ## Drift Detection
 Deployment automation should:
-- build the contract and derive the expected script hash,
 - load desired YAML from this repo,
-- read live chain state for the contract settings UTxO,
-- classify drift as `script_hash_only`, `settings_only`, or `script_hash_and_settings`.
+- read live chain state for the K.O.R.A.-owned settings UTxO,
+- classify drift as `settings_only` for this repo.
 
 No deployment artifact should be created when desired and live state already match.
 
-## SubHandle Rules
-- A script hash change requires a new SubHandle in the format `<contract_slug><ordinal>@handlecontracts`.
-- A settings-only change reuses the current SubHandle and moves it forward with the settings UTxO.
-- The next ordinal must be derived from live chain state, not a repo-local counter.
+## Contract Hash Scope
+- There is no single repo-wide deployed contract hash to monitor for this repo.
+- The per-user collection contracts built from this repo are outside the scope of this deployment-monitoring pipeline.
+- Contract-hash comparison should not be required for the repo-level automation artifacts.
 
 ## Artifact Contract
 The deployment workflow for this repo should emit:
@@ -85,10 +74,8 @@ The canonical observed-state artifact should be JSON and should include:
   "schema_version": 1,
   "repo": "cip-68-444-minting",
   "network": "preview",
-  "contract_slug": "cip-68-444",
-  "current_script_hash": "<hash>",
+  "contract_slug": "cip-68-444-settings",
   "current_settings_utxo_ref": "<tx>#<ix>",
-  "current_subhandle": "cip-68-4441@handlecontracts",
   "settings": {
     "type": "cip_68_444_settings",
     "values": {}
@@ -107,4 +94,4 @@ Humans remain responsible for:
 - uploading/signing/submitting in Eternl,
 - approving the deployment at the wallet boundary.
 
-Post-submit automation should verify that chain state converges to the desired YAML plus the expected SubHandle transition.
+Post-submit automation should verify that chain state converges to the desired YAML for the K.O.R.A.-owned settings UTxO.
