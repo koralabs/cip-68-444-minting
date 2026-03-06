@@ -8,4 +8,5 @@
 ## Technical
 - [Spec Index](./spec/index.md)
 - [Contract Spec](./spec/spec.md)
+- [Contract Deployment Pipeline](./spec/contract-deployment-pipeline.md)
 - [Contract Code Paths](./spec/code-paths.md)
