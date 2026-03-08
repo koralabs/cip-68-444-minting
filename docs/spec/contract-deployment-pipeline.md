@@ -14,13 +14,15 @@ For deployment automation, the stable monitored state here is limited to the K.O
 - Volatile fields such as `tx_hash`, `output_index`, and current UTxO refs belong in observed-state artifacts, not committed desired-state YAML.
 
 ## Desired State Files
-The intended layout is:
+The committed layout is:
 
 ```text
-deploy/<network>/<contract_slug>.yaml
+deploy/preview/cip-68-444-settings.yaml
+deploy/preprod/cip-68-444-settings.yaml
+deploy/mainnet/cip-68-444-settings.yaml
 ```
 
-Each file should contain stable desired state only:
+Each file contains stable desired state only:
 
 ```yaml
 schema_version: 1
@@ -29,7 +31,16 @@ contract_slug: cip-68-444-settings
 settings:
   type: cip_68_444_settings
   values:
-    # K.O.R.A.-owned launch settings only
+    payment_address: <bech32>
+    reference_token_address: <bech32>
+    assets:
+      - asset_name_hex: <hex>
+        required_utxo:
+          tx_id_hex: <hex>
+          index: 0
+        price_lovelace: 0
+        valid_from: 0
+        discounts: []
 ```
 
 Required stable fields:
@@ -37,7 +48,9 @@ Required stable fields:
 - `network`
 - `contract_slug`
 - `settings.type`
-- `settings.values`
+- `settings.values.payment_address`
+- `settings.values.reference_token_address`
+- `settings.values.assets[*]`
 
 Observed-only fields that must not be committed into desired-state YAML:
 - `current_settings_utxo_ref`
@@ -60,31 +73,12 @@ No deployment artifact should be created when desired and live state already mat
 - Contract-hash comparison should not be required for the repo-level automation artifacts.
 
 ## Artifact Contract
-The deployment workflow for this repo should emit:
+The deployment workflow for this repo currently emits:
 - `deployment-plan.json`
 - `summary.md`
 - `summary.json`
-- one or more `tx-XX.cbor` artifacts
-- optional observed-state snapshot artifacts for debugging and audit
 
-The canonical observed-state artifact should be JSON and should include:
-
-```json
-{
-  "schema_version": 1,
-  "repo": "cip-68-444-minting",
-  "network": "preview",
-  "contract_slug": "cip-68-444-settings",
-  "current_settings_utxo_ref": "<tx>#<ix>",
-  "settings": {
-    "type": "cip_68_444_settings",
-    "values": {}
-  },
-  "observed_at": "<iso8601>"
-}
-```
-
-If more than one transaction is required, the plan artifact must encode execution order and dependencies.
+It does not emit `tx-XX.cbor` artifacts yet. The current rollout scope is settings drift detection plus approval-ready summary generation. When the Handles API does not expose the settings datum, the planner records `missing_live_datum` instead of failing.
 
 ## Human Approval Boundary
 Automation prepares deployment transactions and summaries.
