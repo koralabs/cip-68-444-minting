@@ -1,0 +1,17 @@
+schema_version: 2
+network: mainnet
+contract_slug: cip-68-444-config
+assigned_handles:
+  settings:
+    - mint_config_444
+  scripts: []
+ignored_settings: []
+settings:
+  type: cip_68_444_config
+  values:
+    mint_config_444:
+      fee_address: addr1xysgj7dndz9ql57jsh5y0ss258d0yl8wqfj4hy00ulyw6ueq39umx6y2plfa9p0gglpq4gw67f7wuqn9twg7le7ga4es4uake8
+      fee_schedule:
+        - [0, 0]
+        - [10000000, 1000000]
+        - [35000000, 3000000]
