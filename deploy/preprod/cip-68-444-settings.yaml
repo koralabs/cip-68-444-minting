@@ -1,38 +1,17 @@
-schema_version: 1
+schema_version: 2
 network: preprod
-contract_slug: cip-68-444-settings
+contract_slug: cip-68-444-config
+assigned_handles:
+  settings:
+    - mint_config_444
+  scripts: []
+ignored_settings: []
 settings:
-  type: cip_68_444_settings
+  type: cip_68_444_config
   values:
-    payment_address: addr_test1vzzra4003l0hlg97grcpd7t29xcw3uggt3ytmzadnlu9zvq9ezrv9
-    reference_token_address: addr_test1vrhkwnpad0g9406cj4z356fkz9z5zf3n3jja97h7js4kz3gc3ffhz
-    assets:
-      - asset_name_hex: "0x001bc28074657374"
-        required_utxo:
-          tx_id_hex: "0x0000000000000000000000000000000000000000000000000000000000000001"
-          index: 0
-        price_lovelace: 0
-        valid_from: 0
-        discounts: []
-      - asset_name_hex: "0x001bc2807465737431"
-        required_utxo:
-          tx_id_hex: "0x0000000000000000000000000000000000000000000000000000000000000001"
-          index: 0
-        price_lovelace: 10000000
-        valid_from: 0
-        discounts: []
-      - asset_name_hex: "0x001bc2807465737432"
-        required_utxo:
-          tx_id_hex: "0x0000000000000000000000000000000000000000000000000000000000000001"
-          index: 0
-        price_lovelace: 40000000
-        valid_from: 0
-        discounts:
-          - asset_name_hex: "0x0000000000000000000000000000000000000000000000000000000274657374"
-            amount: 35000000
-          - asset_name_hex: "0x0000000000000000000000000000000000000000000000000000000274657374"
-            amount: 30000000
-          - asset_name_hex: "0x0000000000000000000000000000000000000000000000000000000274657374"
-            amount: 25000000
-          - asset_name_hex: "0x0000000000000000000000000000000000000000000000000000000274657374"
-            amount: 0
+    mint_config_444:
+      fee_address: addr_test1vp0kpndjq9lycyx867fd78xflwnngg0tre2y0xl4mx86mzqp79y5w
+      fee_schedule:
+        - [0, 0]
+        - [10000000, 1000000]
+        - [35000000, 3000000]

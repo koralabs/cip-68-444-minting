@@ -1,48 +1,44 @@
-import fs from 'node:fs/promises';
+import fs from "node:fs/promises";
 
-import YAML from 'yaml';
+import YAML from "yaml";
 
 const OBSERVED_ONLY_FIELDS = new Set([
-  'current_settings_utxo_ref',
-  'observed_at',
-  'last_deployed_tx_hash',
+  "current_settings_utxo_ref",
+  "observed_at",
+  "last_deployed_tx_hash",
 ]);
-const ALLOWED_NETWORKS = new Set(['preview', 'preprod', 'mainnet']);
+const ALLOWED_NETWORKS = new Set(["preview", "preprod", "mainnet"]);
 
 export interface DesiredDeploymentState {
-  schemaVersion: 1;
-  network: 'preview' | 'preprod' | 'mainnet';
-  contractSlug: 'cip-68-444-settings';
+  schemaVersion: 2;
+  network: "preview" | "preprod" | "mainnet";
+  contractSlug: "cip-68-444-config";
+  assignedHandles: {
+    settings: string[];
+    scripts: string[];
+  };
+  ignoredSettings: string[];
   settings: {
-    type: 'cip_68_444_settings';
+    type: "cip_68_444_config";
     values: {
-      paymentAddress: string;
-      referenceTokenAddress: string;
-      assets: Array<{
-        assetNameHex: string;
-        requiredUtxo: {
-          txIdHex: string;
-          index: number;
-        };
-        priceLovelace: number;
-        validFrom: number;
-        discounts: Array<{
-          assetNameHex: string;
-          amount: number;
-        }>;
-      }>;
+      mint_config_444: {
+        fee_address: string;
+        fee_schedule: number[][];
+      };
     };
   };
 }
 
-export const loadDesiredDeploymentState = async (path: string): Promise<DesiredDeploymentState> => {
-  const raw = await fs.readFile(path, 'utf8');
+export const loadDesiredDeploymentState = async (
+  path: string
+): Promise<DesiredDeploymentState> => {
+  const raw = await fs.readFile(path, "utf8");
   return parseDesiredDeploymentState(raw, path);
 };
 
 export const parseDesiredDeploymentState = (
   raw: string,
-  sourceLabel = 'desired deployment state'
+  sourceLabel = "desired deployment state"
 ): DesiredDeploymentState => {
   let parsed: unknown;
   try {
@@ -53,7 +49,7 @@ export const parseDesiredDeploymentState = (
     );
   }
 
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new Error(`${sourceLabel} must be a YAML object`);
   }
 
@@ -63,113 +59,126 @@ export const parseDesiredDeploymentState = (
     throw new Error(`${sourceLabel} must not include observed-only field \`${observedOnlyField}\``);
   }
 
-  const schemaVersion = requireNumber(value, 'schema_version', sourceLabel);
-  if (schemaVersion !== 1) {
-    throw new Error(`${sourceLabel} schema_version must equal 1`);
+  const schemaVersion = requireNumber(value, "schema_version", sourceLabel);
+  if (schemaVersion !== 2) {
+    throw new Error(`${sourceLabel} schema_version must equal 2`);
   }
 
-  const network = requireString(value, 'network', sourceLabel).toLowerCase();
+  const network = requireString(value, "network", sourceLabel).toLowerCase();
   if (!ALLOWED_NETWORKS.has(network)) {
     throw new Error(`${sourceLabel} network must be one of preview, preprod, mainnet`);
   }
 
-  const contractSlug = requireString(value, 'contract_slug', sourceLabel);
-  if (contractSlug !== 'cip-68-444-settings') {
-    throw new Error(`${sourceLabel} contract_slug must be cip-68-444-settings`);
+  const contractSlug = requireString(value, "contract_slug", sourceLabel);
+  if (contractSlug !== "cip-68-444-config") {
+    throw new Error(`${sourceLabel} contract_slug must be cip-68-444-config`);
   }
 
-  const settings = requireObject(value, 'settings', sourceLabel);
-  const settingsType = requireString(settings, 'type', `${sourceLabel}.settings`);
-  if (settingsType !== 'cip_68_444_settings') {
-    throw new Error(`${sourceLabel}.settings.type must be cip_68_444_settings`);
+  const assignedHandles = requireObject(value, "assigned_handles", sourceLabel);
+  const settings = requireObject(value, "settings", sourceLabel);
+  const settingsType = requireString(settings, "type", `${sourceLabel}.settings`);
+  if (settingsType !== "cip_68_444_config") {
+    throw new Error(`${sourceLabel}.settings.type must be cip_68_444_config`);
   }
   const settingsValues = parseSettingsValues(
-    requireObject(settings, 'values', `${sourceLabel}.settings`),
+    requireObject(settings, "values", `${sourceLabel}.settings`),
     `${sourceLabel}.settings.values`
   );
 
   return {
-    schemaVersion: 1,
-    network: network as 'preview' | 'preprod' | 'mainnet',
-    contractSlug: 'cip-68-444-settings',
+    schemaVersion: 2,
+    network: network as "preview" | "preprod" | "mainnet",
+    contractSlug: "cip-68-444-config",
+    assignedHandles: {
+      settings: requireStringArrayAllowEmpty(assignedHandles, "settings", `${sourceLabel}.assigned_handles`),
+      scripts: requireStringArrayAllowEmpty(assignedHandles, "scripts", `${sourceLabel}.assigned_handles`),
+    },
+    ignoredSettings: requireStringArrayAllowEmpty(value, "ignored_settings", sourceLabel),
     settings: {
-      type: 'cip_68_444_settings',
+      type: "cip_68_444_config",
       values: settingsValues,
     },
   };
 };
 
 const parseSettingsValues = (value: Record<string, unknown>, sourceLabel: string) => ({
-  paymentAddress: requireString(value, 'payment_address', sourceLabel),
-  referenceTokenAddress: requireString(value, 'reference_token_address', sourceLabel),
-  assets: requireArray(value, 'assets', sourceLabel).map((item, index) =>
-    parseAssetConfig(item, `${sourceLabel}.assets[${index}]`)
+  mint_config_444: parseMintConfig(
+    requireObject(value, "mint_config_444", sourceLabel),
+    `${sourceLabel}.mint_config_444`
   ),
 });
 
-const parseAssetConfig = (value: unknown, sourceLabel: string) => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error(`${sourceLabel} must be an object`);
-  }
-  const record = value as Record<string, unknown>;
-  return {
-    assetNameHex: requireString(record, 'asset_name_hex', sourceLabel),
-    requiredUtxo: parseRequiredUtxo(
-      requireObject(record, 'required_utxo', sourceLabel),
-      `${sourceLabel}.required_utxo`
-    ),
-    priceLovelace: requireNumber(record, 'price_lovelace', sourceLabel),
-    validFrom: requireNumber(record, 'valid_from', sourceLabel),
-    discounts: requireArray(record, 'discounts', sourceLabel).map((item, index) =>
-      parseDiscount(item, `${sourceLabel}.discounts[${index}]`)
-    ),
-  };
-};
-
-const parseRequiredUtxo = (value: Record<string, unknown>, sourceLabel: string) => ({
-  txIdHex: requireString(value, 'tx_id_hex', sourceLabel),
-  index: requireNumber(value, 'index', sourceLabel),
+const parseMintConfig = (value: Record<string, unknown>, sourceLabel: string) => ({
+  fee_address: requireString(value, "fee_address", sourceLabel),
+  fee_schedule: requireNumberMatrix(value, "fee_schedule", sourceLabel),
 });
 
-const parseDiscount = (value: unknown, sourceLabel: string) => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error(`${sourceLabel} must be an object`);
-  }
-  const record = value as Record<string, unknown>;
-  return {
-    assetNameHex: requireString(record, 'asset_name_hex', sourceLabel),
-    amount: requireNumber(record, 'amount', sourceLabel),
-  };
-};
-
-const requireArray = (value: Record<string, unknown>, key: string, sourceLabel: string): unknown[] => {
+const requireObject = (
+  value: Record<string, unknown>,
+  key: string,
+  sourceLabel: string
+): Record<string, unknown> => {
   const resolved = value[key];
-  if (!Array.isArray(resolved)) {
-    throw new Error(`${sourceLabel} must include array field \`${key}\``);
-  }
-  return resolved;
-};
-
-const requireObject = (value: Record<string, unknown>, key: string, sourceLabel: string): Record<string, unknown> => {
-  const resolved = value[key];
-  if (!resolved || typeof resolved !== 'object' || Array.isArray(resolved)) {
+  if (!resolved || typeof resolved !== "object" || Array.isArray(resolved)) {
     throw new Error(`${sourceLabel} must include object field \`${key}\``);
   }
   return resolved as Record<string, unknown>;
 };
 
-const requireString = (value: Record<string, unknown>, key: string, sourceLabel: string): string => {
+const requireString = (
+  value: Record<string, unknown>,
+  key: string,
+  sourceLabel: string
+): string => {
   const resolved = value[key];
-  if (typeof resolved !== 'string' || resolved.trim() === '') {
+  if (typeof resolved !== "string" || resolved.trim() === "") {
     throw new Error(`${sourceLabel} must include string field \`${key}\``);
   }
   return resolved.trim();
 };
 
-const requireNumber = (value: Record<string, unknown>, key: string, sourceLabel: string): number => {
+const requireNumber = (
+  value: Record<string, unknown>,
+  key: string,
+  sourceLabel: string
+): number => {
   const resolved = value[key];
-  if (typeof resolved !== 'number' || Number.isNaN(resolved)) {
+  if (typeof resolved !== "number" || Number.isNaN(resolved)) {
     throw new Error(`${sourceLabel} must include numeric field \`${key}\``);
   }
   return resolved;
+};
+
+const requireStringArrayAllowEmpty = (
+  value: Record<string, unknown>,
+  key: string,
+  sourceLabel: string
+): string[] => {
+  const resolved = value[key];
+  if (!Array.isArray(resolved)) {
+    throw new Error(`${sourceLabel} must include array field \`${key}\``);
+  }
+  return resolved.map((item) => {
+    if (typeof item !== "string" || item.trim() === "") {
+      throw new Error(`${sourceLabel} must include string array field \`${key}\``);
+    }
+    return item.trim();
+  });
+};
+
+const requireNumberMatrix = (
+  value: Record<string, unknown>,
+  key: string,
+  sourceLabel: string
+): number[][] => {
+  const resolved = value[key];
+  if (!Array.isArray(resolved)) {
+    throw new Error(`${sourceLabel} must include array field \`${key}\``);
+  }
+  return resolved.map((row, index) => {
+    if (!Array.isArray(row) || row.some((item) => typeof item !== "number" || Number.isNaN(item))) {
+      throw new Error(`${sourceLabel}.${key}[${index}] must be an array of numbers`);
+    }
+    return row as number[];
+  });
 };
