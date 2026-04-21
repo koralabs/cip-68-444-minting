@@ -1,6 +1,6 @@
 {
     "name": "cip-68-444-minting",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "",
     "type": "module",
     "scripts": {
@@ -11,7 +11,7 @@
         "@emurgo/cardano-serialization-lib-nodejs": "^15.0.3",
         "@hyperionbt/helios": "0.16.7",
         "bip39": "^3.1.0",
-        "yaml": "^2.8.2"
+        "yaml": "^2.8.3"
     },
     "devDependencies": {
         "@types/node": "^18.0",
