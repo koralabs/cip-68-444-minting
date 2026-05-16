@@ -1,18 +1,18 @@
 FORMAT_VERSION=1
 REPO=cip-68-444-minting
-TIMESTAMP_UTC=2026-02-22T18:27:15Z
+TIMESTAMP_UTC=2026-05-16T03:58:56Z
 THRESHOLD_LINES=90
 THRESHOLD_BRANCHES=90
-TOTAL_LINES_PCT=99.21
-TOTAL_BRANCHES_PCT=90.29
+TOTAL_LINES_PCT=98.73
+TOTAL_BRANCHES_PCT=91.66
 STATUS=partial
 SOURCE_PATHS=minting.helios,editing.helios,tests/**/*.ts
 EXCLUDED_PATHS=minting.helios:helios_source_not_supported_by_v8_coverage;editing.helios:helios_source_not_supported_by_v8_coverage
-LANGUAGE_SUMMARY=typescript-tests:lines=99.21,branches=90.29,tool=c8,status=pass;helios:lines=NA,branches=NA,tool=helios-runtime-tests,status=na
+LANGUAGE_SUMMARY=typescript-tests:lines=98.73,branches=91.66,tool=c8,status=pass;helios:lines=NA,branches=NA,tool=helios-runtime-tests,status=na
 
 === RAW_OUTPUT_NPM_TEST ===
 
-> cip-68-444-minting@1.0.0 test
+> cip-68-444-minting@1.0.1 test
 > tsx tests/tests.ts && node --import tsx --test tests/**/*.test.ts
 
 CBOR size of settings with 300 assets is 15066
@@ -33,60 +33,483 @@ INFO (cip_68_444_minting:183:19) Policy minting payment is unpaid: ₳94
 [34m   10 total tests[0m
 [32m   10 successful[0m
 TAP version 13
+# Subtest: Aiken path tests include all required parity scenarios
+ok 1 - Aiken path tests include all required parity scenarios
+  ---
+  duration_ms: 1.53071
+  type: 'test'
+  ...
+# Subtest: Aiken path tests execute successfully
+ok 2 - Aiken path tests execute successfully
+  ---
+  duration_ms: 14016.696896
+  type: 'test'
+  ...
+# Subtest: bip32Ed25519Compat
+    # Subtest: derives deterministic payment keys and signatures from mnemonic entropy
+    ok 1 - derives deterministic payment keys and signatures from mnemonic entropy
+      ---
+      duration_ms: 40.406354
+      type: 'test'
+      ...
+    # Subtest: loads a bip32 private key from xprv bytes
+    ok 2 - loads a bip32 private key from xprv bytes
+      ---
+      duration_ms: 0.680207
+      type: 'test'
+      ...
+    1..2
+ok 3 - bip32Ed25519Compat
+  ---
+  duration_ms: 42.09062
+  type: 'suite'
+  ...
 # [32m*success* - APPROVE - groupA                    'nameA'[0m ( mem:2, cpu:3, size:2 )
 # [32m*success* - DENY    - groupA                    'nameB'[0m ( mem:2, cpu:3, size:2 )
 # [31m------------------------------[0m
 # [31m*failure* - APPROVE - groupA                    'nameC'[0m ( mem:2, cpu:3, size:2 )
 #    [33mERROR:[0m
 # Error: unexpected
-#     at Object.finalize (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.test.ts:1:466)
-#     at ContractTester.test (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.ts:1:2118)
-#     at TestContext.<anonymous> (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.test.ts:1:2419)
-#     at async Test.run (node:internal/test_runner/test:932:9)
-#     at async Test.processPendingSubtests (node:internal/test_runner/test:629:7)
+#     at Object.finalize (/home/jesse/ai-share/koralabs/cip-68-444-minting/tests/contractTester.test.ts:15:13)
+#     at ContractTester.test (/home/jesse/ai-share/koralabs/cip-68-444-minting/tests/contractTester.ts:112:26)
+#     at TestContext.<anonymous> (/home/jesse/ai-share/koralabs/cip-68-444-minting/tests/contractTester.test.ts:95:16)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
 #    [33mEXPECTED:
 #    [34msuccess[0m
 #    [33mRECEIVED:
 #    [31mtx denied[0m
 # [31m------------------------------[0m
 # Subtest: Test constructor and build path apply fixtures and tx actions
-ok 1 - Test constructor and build path apply fixtures and tx actions
+ok 4 - Test constructor and build path apply fixtures and tx actions
   ---
-  duration_ms: 0.527
+  duration_ms: 1.014569
+  type: 'test'
   ...
 # Subtest: ContractTester test() supports filters and approve/deny outcomes
-ok 2 - ContractTester test() supports filters and approve/deny outcomes
+ok 5 - ContractTester test() supports filters and approve/deny outcomes
   ---
-  duration_ms: 1.582239
+  duration_ms: 5.748233
+  type: 'test'
   ...
 # Subtest: ContractTester utility methods and init/group naming paths execute
-ok 3 - ContractTester utility methods and init/group naming paths execute
+ok 6 - ContractTester utility methods and init/group naming paths execute
   ---
-  duration_ms: 0.385144
+  duration_ms: 0.608013
+  type: 'test'
+  ...
+# Subtest: treats missing live datum as manual drift instead of failing
+ok 7 - treats missing live datum as manual drift instead of failing
+  ---
+  duration_ms: 36.770544
+  type: 'test'
+  ...
+# Subtest: decodes the global mint_config_444 datum from the handle UTxO payload
+ok 8 - decodes the global mint_config_444 datum from the handle UTxO payload
+  ---
+  duration_ms: 2.071808
+  type: 'test'
+  ...
+# Subtest: builds settings-only summary entries for the global config handle
+ok 9 - builds settings-only summary entries for the global config handle
+  ---
+  duration_ms: 0.89685
+  type: 'test'
+  ...
+# Subtest: loads desired-state YAML fixtures for all networks
+ok 10 - loads desired-state YAML fixtures for all networks
+  ---
+  duration_ms: 18.27623
+  type: 'test'
+  ...
+# Subtest: rejects observed-only fields in desired-state YAML
+ok 11 - rejects observed-only fields in desired-state YAML
+  ---
+  duration_ms: 1.430334
+  type: 'test'
   ...
 # Subtest: fixtures fallback path works when .env is not present
-ok 4 - fixtures fallback path works when .env is not present
+ok 12 - fixtures fallback path works when .env is not present
   ---
-  duration_ms: 128.580327
+  duration_ms: 241.554812
+  type: 'test'
   ...
 # Subtest: fixtures honors KORA_USER_AGENT when provided
-ok 5 - fixtures honors KORA_USER_AGENT when provided
+ok 13 - fixtures honors KORA_USER_AGENT when provided
   ---
-  duration_ms: 24.039282
+  duration_ms: 71.705723
+  type: 'test'
   ...
-1..5
-# tests 5
-# suites 0
-# pass 5
+# INFO (cip_68_444_editing:73:19) Reference token output missing
+# INFO (cip_68_444_minting:183:19) Policy minting payment is unpaid: ₳94
+# INFO (cip_68_444_minting:187:19) Minting fee is unpaid
+# INFO (cip_68_444_minting:64:11) settings input missing
+# INFO (cip_68_444_minting:73:34) Invalid credential hash
+# INFO (cip_68_444_minting:75:90) not an inline datum
+# INFO (cip_68_444_minting:50:11) mint_config_444 reference input missing
+# INFO (cip_68_444_minting:51:86) not an inline datum
+# Subtest: Helios validators execute all documented code paths
+    # Subtest: M-COST-1 is guarded by caller (static reachability check)
+    ok 1 - M-COST-1 is guarded by caller (static reachability check)
+      ---
+      duration_ms: 0.517985
+      type: 'test'
+      ...
+    # Subtest: M-MINT-2 defensive access is not triggerable through canonical minting tx construction
+    ok 2 - M-MINT-2 defensive access is not triggerable through canonical minting tx construction
+      ---
+      duration_ms: 178.933994
+      type: 'test'
+      ...
+    # Subtest: E-MAIN-7 constructor is exercised with parameterized policy bytes
+    ok 3 - E-MAIN-7 constructor is exercised with parameterized policy bytes
+      ---
+      duration_ms: 81.92496
+      type: 'test'
+      ...
+    # Subtest: Minting baseline approve (signed owner, 444 and 100)
+    ok 4 - Minting baseline approve (signed owner, 444 and 100)
+      ---
+      duration_ms: 725.717505
+      type: 'test'
+      ...
+    # Subtest: Minting approve with unsigned owner requires and receives payment
+    ok 5 - Minting approve with unsigned owner requires and receives payment
+      ---
+      duration_ms: 339.103582
+      type: 'test'
+      ...
+    # Subtest: Minting deny on unpaid payment output
+    ok 6 - Minting deny on unpaid payment output
+      ---
+      duration_ms: 189.573485
+      type: 'test'
+      ...
+    # Subtest: Minting deny on unpaid fee output
+    ok 7 - Minting deny on unpaid fee output
+      ---
+      duration_ms: 197.705376
+      type: 'test'
+      ...
+    # Subtest: Minting approve on 100-only mint path (default config bypass)
+    ok 8 - Minting approve on 100-only mint path (default config bypass)
+      ---
+      duration_ms: 328.606367
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings input is missing
+    ok 9 - Minting deny when settings input is missing
+      ---
+      duration_ms: 81.019714
+      type: 'test'
+      ...
+    # Subtest: Minting approve via settings output branch
+    ok 10 - Minting approve via settings output branch
+      ---
+      duration_ms: 191.510201
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings output datum is not inline
+    ok 11 - Minting deny when settings output datum is not inline
+      ---
+      duration_ms: 58.45478
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings output datum fails decode
+    ok 12 - Minting deny when settings output datum fails decode
+      ---
+      duration_ms: 58.815131
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings owner credential is not PubKey
+    ok 13 - Minting deny when settings owner credential is not PubKey
+      ---
+      duration_ms: 78.91754
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings ref input datum is missing
+    ok 14 - Minting deny when settings ref input datum is missing
+      ---
+      duration_ms: 84.858442
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings ref input datum fails decode
+    ok 15 - Minting deny when settings ref input datum fails decode
+      ---
+      duration_ms: 89.066368
+      type: 'test'
+      ...
+    # Subtest: Minting deny when config ref input is missing
+    ok 16 - Minting deny when config ref input is missing
+      ---
+      duration_ms: 77.477258
+      type: 'test'
+      ...
+    # Subtest: Minting deny when config ref input datum is missing
+    ok 17 - Minting deny when config ref input datum is missing
+      ---
+      duration_ms: 82.246418
+      type: 'test'
+      ...
+    # Subtest: Minting deny when config ref input datum fails decode
+    ok 18 - Minting deny when config ref input datum fails decode
+      ---
+      duration_ms: 141.749139
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:80:89) not found
+    # Subtest: Minting deny when fee schedule has no matching threshold
+    ok 19 - Minting deny when fee schedule has no matching threshold
+      ---
+      duration_ms: 210.762468
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:83:12) index out of range
+# INFO (cip_68_444_minting:90:11) Asset not found in policy
+    # Subtest: Minting deny when fee schedule rows are malformed
+    ok 20 - Minting deny when fee schedule rows are malformed
+      ---
+      duration_ms: 199.043287
+      type: 'test'
+      ...
+    # Subtest: Minting deny when (444) asset is not listed in settings
+    ok 21 - Minting deny when (444) asset is not listed in settings
+      ---
+      duration_ms: 80.288303
+      type: 'test'
+      ...
+    # Subtest: Minting approve with discount selection after lazy rule fallback
+    ok 22 - Minting approve with discount selection after lazy rule fallback
+      ---
+      duration_ms: 344.860471
+      type: 'test'
+      ...
+    # Subtest: Minting approve with discount policy byte length <= 28 (no asset-prefix counting)
+    ok 23 - Minting approve with discount policy byte length <= 28 (no asset-prefix counting)
+      ---
+      duration_ms: 252.61762
+      type: 'test'
+      ...
+    # Subtest: Minting deny when discount entry data type is malformed
+    ok 24 - Minting deny when discount entry data type is malformed
+      ---
+      duration_ms: 139.791514
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:187:19) Minting fee is unpaid
+# INFO (cip_68_444_minting:125:15) Invalid slot range for asset
+    # Subtest: Minting deny when discount vector is malformed
+    ok 25 - Minting deny when discount vector is malformed
+      ---
+      duration_ms: 177.034508
+      type: 'test'
+      ...
+    # Subtest: Minting deny when validity range is wider than 15 minutes
+    ok 26 - Minting deny when validity range is wider than 15 minutes
+      ---
+      duration_ms: 140.154921
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:126:15) This asset minting has expired
+    # Subtest: Minting deny when valid_until has expired
+    ok 27 - Minting deny when valid_until has expired
+      ---
+      duration_ms: 190.994842
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:147:31) Duplicate asset found: 000643b074657374
+    # Subtest: Minting deny when duplicate non-(444) asset names exist in settings
+    ok 28 - Minting deny when duplicate non-(444) asset names exist in settings
+      ---
+      duration_ms: 132.593471
+      type: 'test'
+      ...
+    # Subtest: Minting deny when (100) suffix cannot map to a singleton asset
+    ok 29 - Minting deny when (100) suffix cannot map to a singleton asset
+      ---
+      duration_ms: 95.009272
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:155:35) Required UTxO is missing
+# INFO (cip_68_444_minting:160:35) Missing policy owner signature
+# INFO (cip_68_444_minting:167:35) Reference Token not sent to reference_token_address
+# INFO (cip_68_444_minting:167:35) Reference Token not sent to reference_token_address
+# INFO (cip_68_444_minting:170:35) Only 1 Reference token can be minted with this asset name:000643b074657374
+# INFO (cip_68_444_minting:175:35) Missing policy owner signature
+# INFO (cip_68_444_minting:176:35) There can be no Assets listed for a royalties mint
+    # Subtest: Minting deny when required settings UTxO is not consumed
+    ok 30 - Minting deny when required settings UTxO is not consumed
+      ---
+      duration_ms: 158.536777
+      type: 'test'
+      ...
+    # Subtest: Minting deny when (100) mint is not signed by policy owner
+    ok 31 - Minting deny when (100) mint is not signed by policy owner
+      ---
+      duration_ms: 94.94387
+      type: 'test'
+      ...
+    # Subtest: Minting deny when reference token output is missing
+    ok 32 - Minting deny when reference token output is missing
+      ---
+      duration_ms: 99.533765
+      type: 'test'
+      ...
+    # Subtest: Minting deny when reference token is sent to wrong address
+    ok 33 - Minting deny when reference token is sent to wrong address
+      ---
+      duration_ms: 107.105655
+      type: 'test'
+      ...
+    # Subtest: Minting deny when more than one reference token is minted for an asset name
+    ok 34 - Minting deny when more than one reference token is minted for an asset name
+      ---
+      duration_ms: 105.327353
+      type: 'test'
+      ...
+    # Subtest: Minting deny royalties mint without owner signature
+    ok 35 - Minting deny royalties mint without owner signature
+      ---
+      duration_ms: 83.001183
+      type: 'test'
+      ...
+    # Subtest: Minting deny royalties mint when settings list is non-empty
+    ok 36 - Minting deny royalties mint when settings list is non-empty
+      ---
+      duration_ms: 89.573292
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:179:36) Invalid asset_name_label for this policy. Must be (100) or (444)
+# INFO (cip_68_444_minting:194:19) The BURN redeemer only allows reference tokens to be burnt
+# INFO (cip_68_444_minting:205:23) There should be at least one reference token remaining
+# INFO (cip_68_444_editing:80:19) Missing policy owner signature
+# INFO (cip_68_444_editing:50:11) settings input missing
+# INFO (cip_68_444_editing:59:34) Invalid credential hash
+# INFO (cip_68_444_editing:61:90) not an inline datum
+# INFO (cip_68_444_editing:73:19) Reference token output missing
+# INFO (cip_68_444_editing:77:19) Reference Token not sent to reference_token_address
+# INFO (cip_68_444_editing:67:14) validation returned false
+    # Subtest: Minting approve royalties mint with empty settings assets
+    ok 37 - Minting approve royalties mint with empty settings assets
+      ---
+      duration_ms: 171.797518
+      type: 'test'
+      ...
+    # Subtest: Minting deny invalid asset label in mint set
+    ok 38 - Minting deny invalid asset label in mint set
+      ---
+      duration_ms: 87.395776
+      type: 'test'
+      ...
+    # Subtest: Burn deny when non-reference assets are burnt
+    ok 39 - Burn deny when non-reference assets are burnt
+      ---
+      duration_ms: 74.497881
+      type: 'test'
+      ...
+    # Subtest: Burn deny when burn would remove all remaining reference tokens
+    ok 40 - Burn deny when burn would remove all remaining reference tokens
+      ---
+      duration_ms: 81.212313
+      type: 'test'
+      ...
+    # Subtest: Burn approve when at least one reference token remains
+    ok 41 - Burn approve when at least one reference token remains
+      ---
+      duration_ms: 129.816721
+      type: 'test'
+      ...
+    # Subtest: Editing baseline approve
+    ok 42 - Editing baseline approve
+      ---
+      duration_ms: 55.614903
+      type: 'test'
+      ...
+    # Subtest: Editing deny when policy owner signature is missing
+    ok 43 - Editing deny when policy owner signature is missing
+      ---
+      duration_ms: 30.746047
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings input is missing
+    ok 44 - Editing deny when settings input is missing
+      ---
+      duration_ms: 29.59323
+      type: 'test'
+      ...
+    # Subtest: Editing approve via settings output branch
+    ok 45 - Editing approve via settings output branch
+      ---
+      duration_ms: 63.761961
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings output datum is not inline
+    ok 46 - Editing deny when settings output datum is not inline
+      ---
+      duration_ms: 18.670433
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings output datum fails decode
+    ok 47 - Editing deny when settings output datum fails decode
+      ---
+      duration_ms: 18.257343
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings owner credential is not PubKey
+    ok 48 - Editing deny when settings owner credential is not PubKey
+      ---
+      duration_ms: 27.131618
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings ref input datum is missing
+    ok 49 - Editing deny when settings ref input datum is missing
+      ---
+      duration_ms: 25.88678
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings ref input datum fails decode
+    ok 50 - Editing deny when settings ref input datum fails decode
+      ---
+      duration_ms: 31.399754
+      type: 'test'
+      ...
+    # Subtest: Editing deny when reference token output is missing
+    ok 51 - Editing deny when reference token output is missing
+      ---
+      duration_ms: 50.428064
+      type: 'test'
+      ...
+    # Subtest: Editing deny when reference token output uses wrong address
+    ok 52 - Editing deny when reference token output uses wrong address
+      ---
+      duration_ms: 33.89477
+      type: 'test'
+      ...
+    # Subtest: Editing default switch branch returns false for unknown constructor
+    ok 53 - Editing default switch branch returns false for unknown constructor
+      ---
+      duration_ms: 30.226139
+      type: 'test'
+      ...
+    1..53
+ok 14 - Helios validators execute all documented code paths
+  ---
+  duration_ms: 6657.850871
+  type: 'test'
+  ...
+1..14
+# tests 68
+# suites 1
+# pass 68
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 256.844711
+# duration_ms 14254.334074
 
 === RAW_OUTPUT_C8 ===
 
-> cip-68-444-minting@1.0.0 test
+> cip-68-444-minting@1.0.1 test
 > tsx tests/tests.ts && node --import tsx --test tests/**/*.test.ts
 
 CBOR size of settings with 300 assets is 15066
@@ -107,69 +530,493 @@ INFO (cip_68_444_minting:183:19) Policy minting payment is unpaid: ₳94
 [34m   10 total tests[0m
 [32m   10 successful[0m
 TAP version 13
+# Subtest: Aiken path tests include all required parity scenarios
+ok 1 - Aiken path tests include all required parity scenarios
+  ---
+  duration_ms: 1.581333
+  type: 'test'
+  ...
+# Subtest: Aiken path tests execute successfully
+ok 2 - Aiken path tests execute successfully
+  ---
+  duration_ms: 14461.617289
+  type: 'test'
+  ...
+# Subtest: bip32Ed25519Compat
+    # Subtest: derives deterministic payment keys and signatures from mnemonic entropy
+    ok 1 - derives deterministic payment keys and signatures from mnemonic entropy
+      ---
+      duration_ms: 34.280728
+      type: 'test'
+      ...
+    # Subtest: loads a bip32 private key from xprv bytes
+    ok 2 - loads a bip32 private key from xprv bytes
+      ---
+      duration_ms: 0.640623
+      type: 'test'
+      ...
+    1..2
+ok 3 - bip32Ed25519Compat
+  ---
+  duration_ms: 35.995361
+  type: 'suite'
+  ...
 # [32m*success* - APPROVE - groupA                    'nameA'[0m ( mem:2, cpu:3, size:2 )
 # [32m*success* - DENY    - groupA                    'nameB'[0m ( mem:2, cpu:3, size:2 )
 # [31m------------------------------[0m
 # [31m*failure* - APPROVE - groupA                    'nameC'[0m ( mem:2, cpu:3, size:2 )
 #    [33mERROR:[0m
 # Error: unexpected
-#     at Object.finalize (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.test.ts:1:466)
-#     at ContractTester.test (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.ts:1:2118)
-#     at TestContext.<anonymous> (file:///home/jesse/src/koralabs/cip-68-444-minting/tests/contractTester.test.ts:1:2419)
-#     at async Test.run (node:internal/test_runner/test:932:9)
-#     at async Test.processPendingSubtests (node:internal/test_runner/test:629:7)
+#     at Object.finalize (/home/jesse/ai-share/koralabs/cip-68-444-minting/tests/contractTester.test.ts:15:13)
+#     at ContractTester.test (/home/jesse/ai-share/koralabs/cip-68-444-minting/tests/contractTester.ts:112:26)
+#     at TestContext.<anonymous> (/home/jesse/ai-share/koralabs/cip-68-444-minting/tests/contractTester.test.ts:95:16)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
 #    [33mEXPECTED:
 #    [34msuccess[0m
 #    [33mRECEIVED:
 #    [31mtx denied[0m
 # [31m------------------------------[0m
 # Subtest: Test constructor and build path apply fixtures and tx actions
-ok 1 - Test constructor and build path apply fixtures and tx actions
+ok 4 - Test constructor and build path apply fixtures and tx actions
   ---
-  duration_ms: 0.617024
+  duration_ms: 1.324536
+  type: 'test'
   ...
 # Subtest: ContractTester test() supports filters and approve/deny outcomes
-ok 2 - ContractTester test() supports filters and approve/deny outcomes
+ok 5 - ContractTester test() supports filters and approve/deny outcomes
   ---
-  duration_ms: 1.559077
+  duration_ms: 6.280103
+  type: 'test'
   ...
 # Subtest: ContractTester utility methods and init/group naming paths execute
-ok 3 - ContractTester utility methods and init/group naming paths execute
+ok 6 - ContractTester utility methods and init/group naming paths execute
   ---
-  duration_ms: 0.286836
+  duration_ms: 0.702257
+  type: 'test'
+  ...
+# Subtest: treats missing live datum as manual drift instead of failing
+ok 7 - treats missing live datum as manual drift instead of failing
+  ---
+  duration_ms: 25.835864
+  type: 'test'
+  ...
+# Subtest: decodes the global mint_config_444 datum from the handle UTxO payload
+ok 8 - decodes the global mint_config_444 datum from the handle UTxO payload
+  ---
+  duration_ms: 4.761195
+  type: 'test'
+  ...
+# Subtest: builds settings-only summary entries for the global config handle
+ok 9 - builds settings-only summary entries for the global config handle
+  ---
+  duration_ms: 0.921967
+  type: 'test'
+  ...
+# Subtest: loads desired-state YAML fixtures for all networks
+ok 10 - loads desired-state YAML fixtures for all networks
+  ---
+  duration_ms: 22.779755
+  type: 'test'
+  ...
+# Subtest: rejects observed-only fields in desired-state YAML
+ok 11 - rejects observed-only fields in desired-state YAML
+  ---
+  duration_ms: 1.786977
+  type: 'test'
   ...
 # Subtest: fixtures fallback path works when .env is not present
-ok 4 - fixtures fallback path works when .env is not present
+ok 12 - fixtures fallback path works when .env is not present
   ---
-  duration_ms: 178.461492
+  duration_ms: 395.125593
+  type: 'test'
   ...
 # Subtest: fixtures honors KORA_USER_AGENT when provided
-ok 5 - fixtures honors KORA_USER_AGENT when provided
+ok 13 - fixtures honors KORA_USER_AGENT when provided
   ---
-  duration_ms: 50.803115
+  duration_ms: 74.165712
+  type: 'test'
   ...
-1..5
-# tests 5
-# suites 0
-# pass 5
+# INFO (cip_68_444_editing:73:19) Reference token output missing
+# INFO (cip_68_444_minting:183:19) Policy minting payment is unpaid: ₳94
+# INFO (cip_68_444_minting:187:19) Minting fee is unpaid
+# INFO (cip_68_444_minting:64:11) settings input missing
+# INFO (cip_68_444_minting:73:34) Invalid credential hash
+# INFO (cip_68_444_minting:75:90) not an inline datum
+# INFO (cip_68_444_minting:50:11) mint_config_444 reference input missing
+# INFO (cip_68_444_minting:51:86) not an inline datum
+# Subtest: Helios validators execute all documented code paths
+    # Subtest: M-COST-1 is guarded by caller (static reachability check)
+    ok 1 - M-COST-1 is guarded by caller (static reachability check)
+      ---
+      duration_ms: 0.500091
+      type: 'test'
+      ...
+    # Subtest: M-MINT-2 defensive access is not triggerable through canonical minting tx construction
+    ok 2 - M-MINT-2 defensive access is not triggerable through canonical minting tx construction
+      ---
+      duration_ms: 286.671077
+      type: 'test'
+      ...
+    # Subtest: E-MAIN-7 constructor is exercised with parameterized policy bytes
+    ok 3 - E-MAIN-7 constructor is exercised with parameterized policy bytes
+      ---
+      duration_ms: 145.614797
+      type: 'test'
+      ...
+    # Subtest: Minting baseline approve (signed owner, 444 and 100)
+    ok 4 - Minting baseline approve (signed owner, 444 and 100)
+      ---
+      duration_ms: 1129.831786
+      type: 'test'
+      ...
+    # Subtest: Minting approve with unsigned owner requires and receives payment
+    ok 5 - Minting approve with unsigned owner requires and receives payment
+      ---
+      duration_ms: 566.189855
+      type: 'test'
+      ...
+    # Subtest: Minting deny on unpaid payment output
+    ok 6 - Minting deny on unpaid payment output
+      ---
+      duration_ms: 340.260607
+      type: 'test'
+      ...
+    # Subtest: Minting deny on unpaid fee output
+    ok 7 - Minting deny on unpaid fee output
+      ---
+      duration_ms: 342.316155
+      type: 'test'
+      ...
+    # Subtest: Minting approve on 100-only mint path (default config bypass)
+    ok 8 - Minting approve on 100-only mint path (default config bypass)
+      ---
+      duration_ms: 575.151231
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings input is missing
+    ok 9 - Minting deny when settings input is missing
+      ---
+      duration_ms: 170.885288
+      type: 'test'
+      ...
+    # Subtest: Minting approve via settings output branch
+    ok 10 - Minting approve via settings output branch
+      ---
+      duration_ms: 351.242064
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings output datum is not inline
+    ok 11 - Minting deny when settings output datum is not inline
+      ---
+      duration_ms: 138.601889
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings output datum fails decode
+    ok 12 - Minting deny when settings output datum fails decode
+      ---
+      duration_ms: 138.943355
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings owner credential is not PubKey
+    ok 13 - Minting deny when settings owner credential is not PubKey
+      ---
+      duration_ms: 173.0284
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings ref input datum is missing
+    ok 14 - Minting deny when settings ref input datum is missing
+      ---
+      duration_ms: 167.060088
+      type: 'test'
+      ...
+    # Subtest: Minting deny when settings ref input datum fails decode
+    ok 15 - Minting deny when settings ref input datum fails decode
+      ---
+      duration_ms: 175.329394
+      type: 'test'
+      ...
+    # Subtest: Minting deny when config ref input is missing
+    ok 16 - Minting deny when config ref input is missing
+      ---
+      duration_ms: 179.728695
+      type: 'test'
+      ...
+    # Subtest: Minting deny when config ref input datum is missing
+    ok 17 - Minting deny when config ref input datum is missing
+      ---
+      duration_ms: 173.389262
+      type: 'test'
+      ...
+    # Subtest: Minting deny when config ref input datum fails decode
+    ok 18 - Minting deny when config ref input datum fails decode
+      ---
+      duration_ms: 263.27803
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:80:89) not found
+    # Subtest: Minting deny when fee schedule has no matching threshold
+    ok 19 - Minting deny when fee schedule has no matching threshold
+      ---
+      duration_ms: 329.390387
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:83:12) index out of range
+# INFO (cip_68_444_minting:90:11) Asset not found in policy
+    # Subtest: Minting deny when fee schedule rows are malformed
+    ok 20 - Minting deny when fee schedule rows are malformed
+      ---
+      duration_ms: 320.227496
+      type: 'test'
+      ...
+    # Subtest: Minting deny when (444) asset is not listed in settings
+    ok 21 - Minting deny when (444) asset is not listed in settings
+      ---
+      duration_ms: 188.653423
+      type: 'test'
+      ...
+    # Subtest: Minting approve with discount selection after lazy rule fallback
+    ok 22 - Minting approve with discount selection after lazy rule fallback
+      ---
+      duration_ms: 595.050192
+      type: 'test'
+      ...
+    # Subtest: Minting approve with discount policy byte length <= 28 (no asset-prefix counting)
+    ok 23 - Minting approve with discount policy byte length <= 28 (no asset-prefix counting)
+      ---
+      duration_ms: 438.537093
+      type: 'test'
+      ...
+    # Subtest: Minting deny when discount entry data type is malformed
+    ok 24 - Minting deny when discount entry data type is malformed
+      ---
+      duration_ms: 236.257549
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:187:19) Minting fee is unpaid
+# INFO (cip_68_444_minting:125:15) Invalid slot range for asset
+    # Subtest: Minting deny when discount vector is malformed
+    ok 25 - Minting deny when discount vector is malformed
+      ---
+      duration_ms: 267.9776
+      type: 'test'
+      ...
+    # Subtest: Minting deny when validity range is wider than 15 minutes
+    ok 26 - Minting deny when validity range is wider than 15 minutes
+      ---
+      duration_ms: 262.739728
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:126:15) This asset minting has expired
+    # Subtest: Minting deny when valid_until has expired
+    ok 27 - Minting deny when valid_until has expired
+      ---
+      duration_ms: 312.60321
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:147:31) Duplicate asset found: 000643b074657374
+    # Subtest: Minting deny when duplicate non-(444) asset names exist in settings
+    ok 28 - Minting deny when duplicate non-(444) asset names exist in settings
+      ---
+      duration_ms: 233.834848
+      type: 'test'
+      ...
+    # Subtest: Minting deny when (100) suffix cannot map to a singleton asset
+    ok 29 - Minting deny when (100) suffix cannot map to a singleton asset
+      ---
+      duration_ms: 198.440275
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:155:35) Required UTxO is missing
+# INFO (cip_68_444_minting:160:35) Missing policy owner signature
+# INFO (cip_68_444_minting:167:35) Reference Token not sent to reference_token_address
+# INFO (cip_68_444_minting:167:35) Reference Token not sent to reference_token_address
+# INFO (cip_68_444_minting:170:35) Only 1 Reference token can be minted with this asset name:000643b074657374
+# INFO (cip_68_444_minting:175:35) Missing policy owner signature
+# INFO (cip_68_444_minting:176:35) There can be no Assets listed for a royalties mint
+    # Subtest: Minting deny when required settings UTxO is not consumed
+    ok 30 - Minting deny when required settings UTxO is not consumed
+      ---
+      duration_ms: 259.206137
+      type: 'test'
+      ...
+    # Subtest: Minting deny when (100) mint is not signed by policy owner
+    ok 31 - Minting deny when (100) mint is not signed by policy owner
+      ---
+      duration_ms: 204.387767
+      type: 'test'
+      ...
+    # Subtest: Minting deny when reference token output is missing
+    ok 32 - Minting deny when reference token output is missing
+      ---
+      duration_ms: 211.457022
+      type: 'test'
+      ...
+    # Subtest: Minting deny when reference token is sent to wrong address
+    ok 33 - Minting deny when reference token is sent to wrong address
+      ---
+      duration_ms: 227.247913
+      type: 'test'
+      ...
+    # Subtest: Minting deny when more than one reference token is minted for an asset name
+    ok 34 - Minting deny when more than one reference token is minted for an asset name
+      ---
+      duration_ms: 227.022855
+      type: 'test'
+      ...
+    # Subtest: Minting deny royalties mint without owner signature
+    ok 35 - Minting deny royalties mint without owner signature
+      ---
+      duration_ms: 185.029866
+      type: 'test'
+      ...
+    # Subtest: Minting deny royalties mint when settings list is non-empty
+    ok 36 - Minting deny royalties mint when settings list is non-empty
+      ---
+      duration_ms: 191.369379
+      type: 'test'
+      ...
+# INFO (cip_68_444_minting:179:36) Invalid asset_name_label for this policy. Must be (100) or (444)
+# INFO (cip_68_444_minting:194:19) The BURN redeemer only allows reference tokens to be burnt
+# INFO (cip_68_444_minting:205:23) There should be at least one reference token remaining
+# INFO (cip_68_444_editing:80:19) Missing policy owner signature
+# INFO (cip_68_444_editing:50:11) settings input missing
+# INFO (cip_68_444_editing:59:34) Invalid credential hash
+# INFO (cip_68_444_editing:61:90) not an inline datum
+# INFO (cip_68_444_editing:73:19) Reference token output missing
+# INFO (cip_68_444_editing:77:19) Reference Token not sent to reference_token_address
+# INFO (cip_68_444_editing:67:14) validation returned false
+    # Subtest: Minting approve royalties mint with empty settings assets
+    ok 37 - Minting approve royalties mint with empty settings assets
+      ---
+      duration_ms: 278.217015
+      type: 'test'
+      ...
+    # Subtest: Minting deny invalid asset label in mint set
+    ok 38 - Minting deny invalid asset label in mint set
+      ---
+      duration_ms: 179.609443
+      type: 'test'
+      ...
+    # Subtest: Burn deny when non-reference assets are burnt
+    ok 39 - Burn deny when non-reference assets are burnt
+      ---
+      duration_ms: 169.980374
+      type: 'test'
+      ...
+    # Subtest: Burn deny when burn would remove all remaining reference tokens
+    ok 40 - Burn deny when burn would remove all remaining reference tokens
+      ---
+      duration_ms: 183.06642
+      type: 'test'
+      ...
+    # Subtest: Burn approve when at least one reference token remains
+    ok 41 - Burn approve when at least one reference token remains
+      ---
+      duration_ms: 264.204916
+      type: 'test'
+      ...
+    # Subtest: Editing baseline approve
+    ok 42 - Editing baseline approve
+      ---
+      duration_ms: 102.129559
+      type: 'test'
+      ...
+    # Subtest: Editing deny when policy owner signature is missing
+    ok 43 - Editing deny when policy owner signature is missing
+      ---
+      duration_ms: 66.17765
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings input is missing
+    ok 44 - Editing deny when settings input is missing
+      ---
+      duration_ms: 59.30916
+      type: 'test'
+      ...
+    # Subtest: Editing approve via settings output branch
+    ok 45 - Editing approve via settings output branch
+      ---
+      duration_ms: 116.996823
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings output datum is not inline
+    ok 46 - Editing deny when settings output datum is not inline
+      ---
+      duration_ms: 46.768551
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings output datum fails decode
+    ok 47 - Editing deny when settings output datum fails decode
+      ---
+      duration_ms: 42.689265
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings owner credential is not PubKey
+    ok 48 - Editing deny when settings owner credential is not PubKey
+      ---
+      duration_ms: 57.924642
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings ref input datum is missing
+    ok 49 - Editing deny when settings ref input datum is missing
+      ---
+      duration_ms: 66.111987
+      type: 'test'
+      ...
+    # Subtest: Editing deny when settings ref input datum fails decode
+    ok 50 - Editing deny when settings ref input datum fails decode
+      ---
+      duration_ms: 70.591608
+      type: 'test'
+      ...
+    # Subtest: Editing deny when reference token output is missing
+    ok 51 - Editing deny when reference token output is missing
+      ---
+      duration_ms: 93.779002
+      type: 'test'
+      ...
+    # Subtest: Editing deny when reference token output uses wrong address
+    ok 52 - Editing deny when reference token output uses wrong address
+      ---
+      duration_ms: 73.319887
+      type: 'test'
+      ...
+    # Subtest: Editing default switch branch returns false for unknown constructor
+    ok 53 - Editing default switch branch returns false for unknown constructor
+      ---
+      duration_ms: 60.545172
+      type: 'test'
+      ...
+    1..53
+ok 14 - Helios validators execute all documented code paths
+  ---
+  duration_ms: 12148.611988
+  type: 'test'
+  ...
+1..14
+# tests 68
+# suites 1
+# pass 68
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 369.137109
--------------------|---------|----------|---------|---------|-------------------
-File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
--------------------|---------|----------|---------|---------|-------------------
-All files          |   99.21 |    90.29 |   96.29 |   99.21 |                   
- colors.ts         |     100 |      100 |     100 |     100 |                   
- contractTester.ts |   98.88 |       90 |    92.3 |   98.88 | 115-116           
- fixtures.ts       |   98.88 |    85.71 |     100 |   98.88 | 33-35             
- tests.ts          |     100 |      100 |     100 |     100 |                   
--------------------|---------|----------|---------|---------|-------------------
+# duration_ms 14733.775974
+-----------------------|---------|----------|---------|---------|-------------------
+File                   | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-----------------------|---------|----------|---------|---------|-------------------
+All files              |   98.73 |    91.66 |   97.67 |   98.73 |                   
+ bip32Ed25519Compat.ts |     100 |      100 |     100 |     100 |                   
+ colors.ts             |     100 |      100 |     100 |     100 |                   
+ contractTester.ts     |   98.33 |    89.83 |    92.3 |   98.33 | 155-157           
+ fixtures.ts           |    98.5 |    89.65 |     100 |    98.5 | 39-41,165         
+ tests.ts              |   98.81 |     92.3 |     100 |   98.81 | 163-164           
+-----------------------|---------|----------|---------|---------|-------------------
 
 =============================== Coverage summary ===============================
-Statements   : 99.21% ( 635/640 )
-Branches     : 90.29% ( 93/103 )
-Functions    : 96.29% ( 26/27 )
-Lines        : 99.21% ( 635/640 )
+Statements   : 98.73% ( 704/713 )
+Branches     : 91.66% ( 110/120 )
+Functions    : 97.67% ( 42/43 )
+Lines        : 98.73% ( 704/713 )
 ================================================================================

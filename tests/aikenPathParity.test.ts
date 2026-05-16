@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import path from 'node:path';
 
 const source = fs.readFileSync('./lib/cip_68_444/path_tests.ak', 'utf8');
 
@@ -72,6 +73,23 @@ const discoveredTests = [
   ...source.matchAll(/^\s*test\s+([a-zA-Z0-9_]+)\s*\(/gm)
 ].map((match) => match[1]);
 
+const resolveAikenBinary = () => {
+  const pathDirs = (process.env.PATH ?? '').split(path.delimiter).filter(Boolean);
+  for (const candidate of ['aiken', ...(process.env.HOME ? [
+    path.join(process.env.HOME, '.aiken/bin/aiken'),
+    path.join(process.env.HOME, '.local/bin/aiken')
+  ] : [])]) {
+    if (candidate === 'aiken') {
+      const discovered = pathDirs.map((dir) => path.join(dir, candidate)).find((entry) => fs.existsSync(entry));
+      if (discovered) return discovered;
+    } else if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return 'aiken';
+};
+
 test('Aiken path tests include all required parity scenarios', () => {
   const missing = requiredTests.filter((name) => !discoveredTests.includes(name));
   const unexpected = discoveredTests.filter((name) => !requiredTests.includes(name as (typeof requiredTests)[number]));
@@ -90,7 +108,7 @@ test('Aiken path tests include all required parity scenarios', () => {
 });
 
 test('Aiken path tests execute successfully', () => {
-  execFileSync('aiken', ['check'], {
+  execFileSync(resolveAikenBinary(), ['check'], {
     cwd: process.cwd(),
     stdio: 'pipe'
   });

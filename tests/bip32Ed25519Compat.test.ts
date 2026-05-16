@@ -24,11 +24,26 @@ describe('bip32Ed25519Compat', () => {
             .derive(0)
             .derive(0)
             .toPrivateKey();
+        const hardenedPathKey = rootKey
+            .deriveHardened(1852)
+            .deriveHardened(1815)
+            .deriveHardened(0)
+            .derive(0)
+            .derive(0)
+            .toPrivateKey();
+        const message = Buffer.from('abcd', 'hex');
+        const signature = privateKey.sign(message);
 
         assert.strictEqual(rootKey.toBytes().toString('hex'), expectedRootKeyHex);
+        assert.strictEqual(privateKey.toBytes().length, 64);
         assert.strictEqual(privateKey.toPublicKey().toBytes().toString('hex'), expectedPublicKeyHex);
+        assert.strictEqual(hardenedPathKey.toPublicKey().toBytes().toString('hex'), expectedPublicKeyHex);
         assert.strictEqual(privateKey.toPublicKey().hash().toString('hex'), expectedPublicKeyHashHex);
-        assert.strictEqual(privateKey.sign(Buffer.from('abcd', 'hex')).toString('hex'), expectedSignatureHex);
+        assert.strictEqual(signature.toString('hex'), expectedSignatureHex);
+        assert.strictEqual(privateKey.verify(signature, message), true);
+        assert.strictEqual(privateKey.toPublicKey().verify(signature, message), true);
+        assert.strictEqual(privateKey.verify(signature, Buffer.from('abce', 'hex')), false);
+        assert.strictEqual(privateKey.toPublicKey().verify(signature, Buffer.from('abce', 'hex')), false);
     });
 
     it('loads a bip32 private key from xprv bytes', () => {
