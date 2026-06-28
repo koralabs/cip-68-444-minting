@@ -48,6 +48,67 @@ test("treats missing live datum as manual drift instead of failing", async () =>
   });
 });
 
+test("returns empty live state when the config handle does not exist", async () => {
+  const calls: Array<{ url: string; userAgent: string | null }> = [];
+  const live = await fetchLiveSettingsState({
+    network: "preprod",
+    userAgent: "codex-test",
+    fetchFn: (async (url: string | URL, init?: RequestInit) => {
+      calls.push({
+        url: String(url),
+        userAgent: new Headers(init?.headers).get("User-Agent"),
+      });
+      return new Response(JSON.stringify({}), { status: 404 });
+    }) as typeof fetch,
+  });
+
+  assert.deepEqual(live, {
+    currentSettingsUtxoRef: null,
+    hasDatum: false,
+    values: null,
+  });
+  assert.deepEqual(calls, [{
+    url: "https://preprod.api.handle.me/handles/mint_config_444",
+    userAgent: "codex-test",
+  }]);
+});
+
+test("throws when the Handles API handle lookup fails", async () => {
+  await assert.rejects(
+    fetchLiveSettingsState({
+      network: "mainnet",
+      userAgent: "codex-test",
+      fetchFn: (async () => new Response(JSON.stringify({}), { status: 502 })) as typeof fetch,
+    }),
+    /failed to load handle mint_config_444: HTTP 502/
+  );
+});
+
+test("throws when decoded datum JSON is not the settings tuple", async () => {
+  let decodedDatum = false;
+  await assert.rejects(
+    fetchLiveSettingsState({
+      network: "preview",
+      userAgent: "codex-test",
+      fetchFn: (async (url: string | URL, init?: RequestInit) => {
+        const target = String(url);
+        if (target.includes("/handles/mint_config_444/utxo")) {
+          return new Response(JSON.stringify({ datum: "deadbeef" }), { status: 200 });
+        }
+        if (target.includes("/datum?from=plutus_data_cbor&to=json&numeric_keys=true")) {
+          decodedDatum = true;
+          assert.equal(init?.method, "POST");
+          assert.equal(init?.body, JSON.stringify({ cbor: "deadbeef" }));
+          return new Response(JSON.stringify(["not-a-bech32-address", "not-a-fee-schedule"]), { status: 200 });
+        }
+        return new Response(JSON.stringify({ utxo: "tx#1" }), { status: 200 });
+      }) as typeof fetch,
+    }),
+    /decoded config datum has invalid top-level fields/
+  );
+  assert.equal(decodedDatum, true);
+});
+
 test("decodes the global mint_config_444 datum from the handle UTxO payload", async () => {
   const live = await fetchLiveSettingsState({
     network: "preview",
@@ -94,4 +155,19 @@ test("builds settings-only summary entries for the global config handle", () => 
   });
   assert.equal(plan.summaryJson.contracts[0].drift_type, "settings_only");
   assert.match(plan.summaryMarkdown, /mint_config_444/);
+});
+
+test("builds a no-change plan when live settings match desired settings", () => {
+  const plan = buildDeploymentPlan({
+    desired: desiredState,
+    live: {
+      currentSettingsUtxoRef: "tx#0",
+      hasDatum: true,
+      values: desiredState.settings.values,
+    },
+  });
+
+  assert.equal(plan.summaryJson.contracts[0].drift_type, "no_change");
+  assert.deepEqual(plan.summaryJson.contracts[0].settings.diff_rows, []);
+  assert.match(plan.summaryMarkdown, /No settings changes/);
 });
