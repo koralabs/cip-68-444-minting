@@ -16,6 +16,7 @@ npm test | tee "$TEST_OUT"
 
 # Measurable TypeScript harness scope.
 npx c8 \
+  --temp-directory="$TMP_DIR/c8-coverage" \
   --all \
   --include='tests/**/*.ts' \
   --exclude='**/node_modules/**' \
