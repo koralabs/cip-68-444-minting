@@ -16,6 +16,7 @@ import {
   feeAddress
 } from './fixtures.js';
 import { Test } from './contractTester.js';
+import { loadNetworkParams } from './networkParams.js';
 
 helios.config.set({ IS_TESTNET: false, AUTO_SET_VALIDITY_RANGE: true });
 
@@ -92,9 +93,7 @@ const initSuite = async () => {
   editingProgram.parameters.MINTING_POLICY_ID = mintingContract.mintingPolicyHash.hex;
   const editingContract = editingProgram.compile();
 
-  const networkParams = new helios.NetworkParams(
-    await fetch('https://d1t0d7c2nekuk0.cloudfront.net/mainnet.json').then((response) => response.json())
-  );
+  const networkParams = await loadNetworkParams();
 
   const common = new CommonFixtures();
   await common.initialize(makeBaseSettings(), makeBaseConfig());

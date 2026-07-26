@@ -1,6 +1,7 @@
 import * as helios from '@hyperionbt/helios'
 import { Fixtures } from './fixtures.js'
 import { Color } from './colors.js';
+import { loadNetworkParams } from './networkParams.js';
 helios.config.set({ IS_TESTNET: false, AUTO_SET_VALIDITY_RANGE: true });
 
 export class Test {
@@ -74,11 +75,7 @@ export class ContractTester {
     async init (groupName?: string, testName?: string) {
       this.groupName = groupName;
       this.testName = testName;
-        this.networkParams = new helios.NetworkParams(
-            await fetch(`https://d1t0d7c2nekuk0.cloudfront.net/mainnet.json`).then((response) =>
-                response.json()
-            )
-        );
+        this.networkParams = await loadNetworkParams();
     }
 
     cleanTestName() {
