@@ -81,6 +81,13 @@ settings:
   );
 });
 
+test('rejects missing numeric schema version', () => {
+  assert.throws(
+    () => parseDesiredDeploymentState(validDesiredYaml.replace('schema_version: 2', 'schema_version: bad'), 'inline desired state'),
+    /inline desired state must include numeric field `schema_version`/
+  );
+});
+
 test('rejects unsupported networks', () => {
   assert.throws(
     () => parseDesiredDeploymentState(validDesiredYaml.replace('PREVIEW', 'sanchonet'), 'inline desired state'),
@@ -98,6 +105,36 @@ test('rejects unsupported contract slugs', () => {
   );
 });
 
+test('rejects blank string fields', () => {
+  assert.throws(
+    () => parseDesiredDeploymentState(
+      validDesiredYaml.replace('fee_address: " addr_test1abc "', 'fee_address: "   "'),
+      'inline desired state'
+    ),
+    /inline desired state\.settings\.values\.mint_config_444 must include string field `fee_address`/
+  );
+});
+
+test('rejects missing nested object fields', () => {
+  assert.throws(
+    () => parseDesiredDeploymentState(
+      validDesiredYaml.replace('    mint_config_444:\n      fee_address: " addr_test1abc "\n      fee_schedule:\n        - [0, 0]\n        - [11000000, 2000000]', '    mint_config_444: null'),
+      'inline desired state'
+    ),
+    /inline desired state\.settings\.values must include object field `mint_config_444`/
+  );
+});
+
+test('rejects non-array ignored settings', () => {
+  assert.throws(
+    () => parseDesiredDeploymentState(
+      validDesiredYaml.replace('ignored_settings: []', 'ignored_settings: mint_config_444.fee_schedule'),
+      'inline desired state'
+    ),
+    /inline desired state must include array field `ignored_settings`/
+  );
+});
+
 test('rejects non-string assigned handles', () => {
   assert.throws(
     () => parseDesiredDeploymentState(
@@ -105,6 +142,16 @@ test('rejects non-string assigned handles', () => {
       'inline desired state'
     ),
     /inline desired state\.assigned_handles must include string array field `settings`/
+  );
+});
+
+test('rejects non-array fee schedules', () => {
+  assert.throws(
+    () => parseDesiredDeploymentState(
+      validDesiredYaml.replace('      fee_schedule:\n        - [0, 0]\n        - [11000000, 2000000]', '      fee_schedule: 7'),
+      'inline desired state'
+    ),
+    /inline desired state\.settings\.values\.mint_config_444 must include array field `fee_schedule`/
   );
 });
 

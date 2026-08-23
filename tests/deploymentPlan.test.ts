@@ -320,3 +320,52 @@ test('builds nested diff rows and carries ignored paths into plan artifacts', ()
   assert.deepEqual(plan.deploymentPlanJson.contracts[0].settings.ignored_paths, ['mint_config_444.fee_schedule']);
   assert.match(plan.summaryMarkdown, /mint_config_444\.fee_schedule/);
 });
+
+test('builds nested primitive diff rows for changed live fields', () => {
+  const liveValues: DesiredDeploymentState['settings']['values'] = {
+    mint_config_444: {
+      ...desiredState.settings.values.mint_config_444,
+      fee_address: 'addr_test1different',
+    },
+  };
+
+  const plan = buildDeploymentPlan({
+    desired: desiredState,
+    live: {
+      currentSettingsUtxoRef: 'tx#3',
+      hasDatum: true,
+      values: liveValues,
+    },
+  });
+
+  assert.deepEqual(plan.summaryJson.contracts[0].settings.diff_rows, [{
+    path: 'mint_config_444.fee_address',
+    current: 'addr_test1different',
+    desired: feeAddressBech32,
+  }]);
+});
+
+test('reports malformed live setting objects as field-level drift', () => {
+  const liveValues = {
+    mint_config_444: 'not-a-settings-object',
+  } as unknown as DesiredDeploymentState['settings']['values'];
+
+  const plan = buildDeploymentPlan({
+    desired: desiredState,
+    live: {
+      currentSettingsUtxoRef: 'tx#4',
+      hasDatum: true,
+      values: liveValues,
+    },
+  });
+
+  assert.deepEqual(plan.summaryJson.contracts[0].settings.diff_rows, [{
+    path: 'mint_config_444.fee_address',
+    current: undefined,
+    desired: feeAddressBech32,
+  }, {
+    path: 'mint_config_444.fee_schedule',
+    current: undefined,
+    desired: desiredState.settings.values.mint_config_444.fee_schedule,
+  }]);
+});
