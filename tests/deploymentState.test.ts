@@ -88,6 +88,19 @@ test('rejects missing numeric schema version', () => {
   );
 });
 
+test('rejects unsupported schema versions', () => {
+  // Invariant: desired state must use schema version 2.
+  // Failure mode: a future or stale schema could otherwise be interpreted with the wrong contract.
+  // Negative control: the unchanged version-2 fixture parses in the normalization test above.
+  assert.throws(
+    () => parseDesiredDeploymentState(
+      validDesiredYaml.replace('schema_version: 2', 'schema_version: 3'),
+      'inline desired state'
+    ),
+    /inline desired state schema_version must equal 2/
+  );
+});
+
 test('rejects unsupported networks', () => {
   assert.throws(
     () => parseDesiredDeploymentState(validDesiredYaml.replace('PREVIEW', 'sanchonet'), 'inline desired state'),
@@ -102,6 +115,32 @@ test('rejects unsupported contract slugs', () => {
       'inline desired state'
     ),
     /inline desired state contract_slug must be cip-68-444-config/
+  );
+});
+
+test('rejects missing assigned handles object', () => {
+  // Invariant: assigned handle groups are required even when their arrays are empty.
+  // Failure mode: deployment planning could lose the handle-assignment contract.
+  // Negative control: restoring the object makes the shared fixture valid.
+  assert.throws(
+    () => parseDesiredDeploymentState(
+      validDesiredYaml.replace('assigned_handles:\n  settings: [mint_config_444]\n  scripts: []', 'assigned_handles: null'),
+      'inline desired state'
+    ),
+    /inline desired state must include object field `assigned_handles`/
+  );
+});
+
+test('rejects unsupported settings types', () => {
+  // Invariant: settings values must be interpreted only as cip_68_444_config.
+  // Failure mode: another schema type could be accepted and silently misparsed.
+  // Negative control: restoring cip_68_444_config makes the shared fixture valid.
+  assert.throws(
+    () => parseDesiredDeploymentState(
+      validDesiredYaml.replace('type: cip_68_444_config', 'type: cip_68_444_minting'),
+      'inline desired state'
+    ),
+    /inline desired state\.settings\.type must be cip_68_444_config/
   );
 });
 
@@ -152,6 +191,19 @@ test('rejects non-array fee schedules', () => {
       'inline desired state'
     ),
     /inline desired state\.settings\.values\.mint_config_444 must include array field `fee_schedule`/
+  );
+});
+
+test('rejects non-array fee schedule rows', () => {
+  // Invariant: every fee schedule entry must remain a numeric tuple-like row.
+  // Failure mode: a scalar row could reach contract deployment with an invalid shape.
+  // Negative control: the array rows in the shared fixture parse successfully.
+  assert.throws(
+    () => parseDesiredDeploymentState(
+      validDesiredYaml.replace('- [11000000, 2000000]', '- 11000000'),
+      'inline desired state'
+    ),
+    /inline desired state\.settings\.values\.mint_config_444\.fee_schedule\[1\] must be an array of numbers/
   );
 });
 
