@@ -12,3 +12,6 @@
 - [Contract Deployment Pipeline](./spec/contract-deployment-pipeline.md)
 - [Contract Code Paths](./spec/code-paths.md)
 - [Architecture And Data Flow](./spec/architecture.md)
+
+## Canonical contract
+- [Canonical contract (must-never-violate rules)](../CANONICAL_CONTRACT.md)
