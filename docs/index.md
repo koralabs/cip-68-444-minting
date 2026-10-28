@@ -12,3 +12,6 @@
 - [Contract Deployment Pipeline](./spec/contract-deployment-pipeline.md)
 - [Contract Code Paths](./spec/code-paths.md)
 - [Architecture And Data Flow](./spec/architecture.md)
+
+## Policy proposals (not active)
+- [Canonical contract and enclave draft](./proposals/phase5-cip-68-444-minting/README.md): operator review required.
