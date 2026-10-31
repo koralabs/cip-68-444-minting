@@ -1,0 +1,22 @@
+# cip-68-444-minting enclave: files whose change needs operator approval before merging to a protected branch.
+# Active when merged at the repo root (read by kora-bot merge_pr). Exact repo-root-relative paths, no wildcards.
+# Scope (operator decision 2, 2026-10-13): exact on-chain Aiken/Helios source, plus this manifest and CANONICAL_CONTRACT.md.
+# Tests, npm/JS/TS, builders, config, generated artifacts and workflows follow normal agent review.
+# Limit: path-only matching cannot tell embedded Aiken test blocks from production code in a listed file.
+# Why each path: CANONICAL_CONTRACT.md.
+
+.enclave
+CANONICAL_CONTRACT.md
+editing.helios
+lib/cip_68_444/common.ak
+lib/cip_68_444/constants.ak
+lib/cip_68_444/editing.ak
+lib/cip_68_444/editing_proxy.ak
+lib/cip_68_444/minting.ak
+lib/cip_68_444/minting_proxy.ak
+lib/cip_68_444/types.ak
+minting.helios
+validators/editing.ak
+validators/editing_observer.ak
+validators/minting.ak
+validators/minting_observer.ak
