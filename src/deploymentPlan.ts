@@ -46,7 +46,8 @@ export const fetchLiveSettingsState = async ({
 
   const utxoResponse = await fetchFn(
     `${handlesApiBaseUrlForNetwork(network)}/handles/${encodeURIComponent(SETTINGS_HANDLE)}/utxo`,
-    { headers: { "User-Agent": userAgent } }
+    // The API JSON-decodes the datum by default; the planner needs the raw CBOR hex.
+    { headers: { "User-Agent": userAgent, Accept: "text/plain" } }
   );
   if (!utxoResponse.ok) {
     throw new Error(`failed to load UTxO for ${SETTINGS_HANDLE}: HTTP ${utxoResponse.status}`);
